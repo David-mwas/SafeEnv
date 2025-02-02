@@ -10,21 +10,23 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	// "github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var collection *mongo.Collection
-var encryptionKey []byte
 
-// var jwtSecret = []byte("supersecretkey")
+var encryptionKey []byte
+var jwtSecret []byte
 
 func init() {
 	err := godotenv.Load() // Load .env file
@@ -35,6 +37,7 @@ func init() {
 
 func main() {
 	encryptionKey = []byte(os.Getenv("SAFEENV_SECRET_KEY"))
+	jwtSecret = []byte(os.Getenv("SAFEENV_JWT_SECRET"))
 
 	if len(encryptionKey) != 32 {
 
@@ -50,13 +53,24 @@ func main() {
 	collection = client.Database("safeenv").Collection("variables")
 
 	r := gin.Default()
+
+	// public routes
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "Welcome to SafeEnv API"})
 	})
-	r.POST("/api/v1/store", storeVariable)
-	r.GET("/api/v1/retrieve/:key", retrieveVariable)
-	r.GET("/api/v1/share/retrieve/:key", retrieveSharedVariable)
-	r.POST("/api/v1/share", shareVariable)
+	r.POST("/api/v1/register", registerUser)
+	r.POST("/api/v1/login", loginUser)
+
+	// protected routes
+	auth := r.Group("/api/v1")
+	auth.Use(authMiddleware())
+	{
+		auth.POST("/store", storeVariable)
+		auth.GET("/retrieve/:key", retrieveVariable)
+		auth.GET("/share/retrieve/:key", retrieveSharedVariable)
+		auth.POST("/share", shareVariable)
+	}
+
 	// r.GET("/api/v1/audit", auditLogs)
 	r.Run(":8080")
 }
@@ -109,6 +123,121 @@ func decrypt(encryptedText string) (string, error) {
 	stream.XORKeyStream(plaintext, ciphertext)
 
 	return string(plaintext), nil
+}
+
+// auth
+func registerUser(c *gin.Context) {
+	var user struct {
+		Username string `json:"username"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Hash password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
+
+	// Store user in DB
+	_, err = collection.Database().Collection("users").InsertOne(context.TODO(), bson.M{
+		"username":     user.Username,
+		"email":        user.Email,
+		"passwordHash": string(hashedPassword),
+		"createdAt":    time.Now(),
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "User registered successfully"})
+}
+
+func loginUser(c *gin.Context) {
+	var credentials struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	if err := c.ShouldBindJSON(&credentials); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Fetch user from DB
+	var user struct {
+		ID           string `bson:"_id"`
+		Username     string `bson:"username"`
+		Email        string `bson:"email"`
+		PasswordHash string `bson:"passwordHash"`
+	}
+	err := collection.Database().Collection("users").FindOne(context.TODO(), bson.M{"email": credentials.Email}).Decode(&user)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
+
+	// Compare password
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(credentials.Password))
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
+
+	// Generate JWT Token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": user.ID,
+		"exp": time.Now().Add(time.Hour * 24).Unix(), // 1-day expiration
+	})
+	tokenString, err := token.SignedString(jwtSecret)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"token": tokenString})
+}
+
+func authMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tokenString := c.GetHeader("Authorization")
+		fmt.Println("tokenString", tokenString)
+		if tokenString == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token required"})
+			c.Abort()
+			return
+		}
+
+		// Remove the "Bearer " prefix if present
+		if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
+			tokenString = tokenString[7:]
+		} else {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Malformed token"})
+			c.Abort()
+			return
+		}
+
+		// Parse the token
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			return jwtSecret, nil
+		})
+
+		if err != nil || !token.Valid {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token " + err.Error()})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
 }
 
 func storeVariable(c *gin.Context) {
@@ -198,7 +327,7 @@ func shareVariable(c *gin.Context) {
 	encodedKey := base64.URLEncoding.EncodeToString([]byte(data.Key))
 
 	// Generate a shareable link
-	shareLink := fmt.Sprintf("http://localhost:8080/api/v1/retrieve/%s", encodedKey)
+	shareLink := fmt.Sprintf("http://localhost:8080/api/v1/share/retrieve/%s", encodedKey)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Shareable link generated",
