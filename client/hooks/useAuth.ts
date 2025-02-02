@@ -2,7 +2,7 @@ const useAuthToken = () => {
   const getItem = () => {
     if (typeof window !== "undefined") {
       const token = localStorage?.getItem("safeEnv");
-    //   const chatid = localStorage?.getItem("chatId");
+      //   const chatid = localStorage?.getItem("chatId");
       return { token }; // Return an object with token and chatid
     } else {
       // return { token: null, chatid: null };
@@ -14,7 +14,7 @@ const useAuthToken = () => {
     if (typeof window !== "undefined") {
       // Remove the token from local storage
       localStorage.removeItem("safeEnv");
-    //   localStorage.removeItem("chatId");
+      //   localStorage.removeItem("chatId");
     }
   };
 

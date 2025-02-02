@@ -14,6 +14,7 @@ import (
 
 	"os"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
@@ -54,16 +55,27 @@ func main() {
 
 	r := gin.Default()
 
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173"}, // Allow your frontend origin
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"}, // Explicitly allow Authorization
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
 	// public routes
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "Welcome to SafeEnv API"})
 	})
+
 	r.POST("/api/v1/register", registerUser)
 	r.POST("/api/v1/login", loginUser)
 
 	// protected routes
 	auth := r.Group("/api/v1")
 	auth.Use(authMiddleware())
+
 	{
 		auth.POST("/store", storeVariable)
 		auth.GET("/keys", getUserKeys)
