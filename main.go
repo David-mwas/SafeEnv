@@ -55,8 +55,9 @@ func main() {
 	})
 	r.POST("/api/v1/store", storeVariable)
 	r.GET("/api/v1/retrieve/:key", retrieveVariable)
+	r.GET("/api/v1/share/retrieve/:key", retrieveSharedVariable)
 	r.POST("/api/v1/share", shareVariable)
-	r.GET("/api/v1/audit", auditLogs)
+	// r.GET("/api/v1/audit", auditLogs)
 	r.Run(":8080")
 }
 
@@ -131,6 +132,36 @@ func storeVariable(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Stored successfully"})
 }
 
+func retrieveSharedVariable(c *gin.Context) {
+	encodedKey := c.Param("key")
+
+	// Decode the Base64 key
+	keyBytes, err := base64.URLEncoding.DecodeString(encodedKey)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid key"})
+		return
+	}
+	key := string(keyBytes)
+
+	// Search for the variable in MongoDB
+	var result struct {
+		Value string `bson:"value"`
+	}
+	err = collection.FindOne(context.TODO(), bson.M{"key": key}).Decode(&result)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Key not found"})
+		return
+	}
+
+	// Decrypt the stored value
+	decryptedValue, _ := decrypt(result.Value)
+
+	c.JSON(http.StatusOK, gin.H{
+		"key":   key,
+		"value": decryptedValue,
+	})
+}
+
 func retrieveVariable(c *gin.Context) {
 	key := c.Param("key")
 	var result struct {
@@ -152,13 +183,31 @@ func shareVariable(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	// Generate a temporary shareable link (dummy link for now)
-	shareLink := "https://localost:8080/" + data.Key
-	c.JSON(http.StatusOK, gin.H{"message": "Shareable link generated", "link": shareLink})
+
+	// Retrieve the stored variable from MongoDB
+	var result struct {
+		Value string `bson:"value"`
+	}
+	err := collection.FindOne(context.TODO(), bson.M{"key": data.Key}).Decode(&result)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Key not found"})
+		return
+	}
+
+	// Base64 encode the key (URL-safe)
+	encodedKey := base64.URLEncoding.EncodeToString([]byte(data.Key))
+
+	// Generate a shareable link
+	shareLink := fmt.Sprintf("http://localhost:8080/api/v1/retrieve/%s", encodedKey)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Shareable link generated",
+		"link":    shareLink,
+	})
 }
 
-func auditLogs(c *gin.Context) {
-	// Dummy audit log response for now
-	logs := []string{"User1 stored KEY1", "User2 retrieved KEY2"}
-	c.JSON(http.StatusOK, gin.H{"logs": logs})
-}
+// func auditLogs(c *gin.Context) {
+// 	// Dummy audit log response for now
+// 	logs := []string{"User1 stored KEY1", "User2 retrieved KEY2"}
+// 	c.JSON(http.StatusOK, gin.H{"logs": logs})
+// }
