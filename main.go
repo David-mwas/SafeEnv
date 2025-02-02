@@ -14,6 +14,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -21,15 +22,26 @@ import (
 )
 
 var collection *mongo.Collection
+var encryptionKey []byte
 
 // var jwtSecret = []byte("supersecretkey")
-var encryptionKey = []byte(os.Getenv("SAFEENV_SECRET_KEY"))
+
+func init() {
+	err := godotenv.Load() // Load .env file
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+}
 
 func main() {
+	encryptionKey = []byte(os.Getenv("SAFEENV_SECRET_KEY"))
+
 	if len(encryptionKey) != 32 {
-		fmt.Println(os.Getenv("SAFEENV_SECRET_KEY"))
+
 		log.Fatal("Encryption key must be exactly 32 bytes long not: ", len(encryptionKey))
+
 	}
+
 	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
