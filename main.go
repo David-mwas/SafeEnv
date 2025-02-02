@@ -5,12 +5,13 @@ import (
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/rand"
 	"encoding/base64"
 	"fmt"
 	"log"
 	"net/http"
 
-	// "os"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -20,10 +21,15 @@ import (
 )
 
 var collection *mongo.Collection
+
 // var jwtSecret = []byte("supersecretkey")
-var encryptionKey = []byte("12345678901234567890123456789012")
+var encryptionKey = []byte(os.Getenv("SAFEENV_SECRET_KEY"))
 
 func main() {
+	if len(encryptionKey) != 32 {
+		fmt.Println(os.Getenv("SAFEENV_SECRET_KEY"))
+		log.Fatal("Encryption key must be exactly 32 bytes long not: ", len(encryptionKey))
+	}
 	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
@@ -42,28 +48,53 @@ func main() {
 	r.Run(":8080")
 }
 
+func generateIV() ([]byte, error) {
+	iv := make([]byte, aes.BlockSize)
+	if _, err := rand.Read(iv); err != nil {
+		return nil, err
+	}
+	return iv, nil
+}
+
 func encrypt(text string) (string, error) {
 	block, err := aes.NewCipher(encryptionKey)
 	if err != nil {
 		return "", err
 	}
-	iv := encryptionKey[:aes.BlockSize]
+	iv, err := generateIV()
+	if err != nil {
+		return "", err
+	}
 	stream := cipher.NewCFBEncrypter(block, iv)
 	ciphertext := make([]byte, len(text))
 	stream.XORKeyStream(ciphertext, []byte(text))
-	return base64.StdEncoding.EncodeToString(ciphertext), nil
+
+	// Store IV + Ciphertext together
+	return base64.StdEncoding.EncodeToString(append(iv, ciphertext...)), nil
 }
 
-func decrypt(text string) (string, error) {
+func decrypt(encryptedText string) (string, error) {
 	block, err := aes.NewCipher(encryptionKey)
 	if err != nil {
 		return "", err
 	}
-	iv := encryptionKey[:aes.BlockSize]
-	ciphertext, _ := base64.StdEncoding.DecodeString(text)
+
+	encryptedBytes, err := base64.StdEncoding.DecodeString(encryptedText)
+	if err != nil {
+		return "", err
+	}
+
+	if len(encryptedBytes) < aes.BlockSize {
+		return "", fmt.Errorf("ciphertext too short")
+	}
+
+	iv := encryptedBytes[:aes.BlockSize]         // Extract IV
+	ciphertext := encryptedBytes[aes.BlockSize:] // Extract actual data
+
 	stream := cipher.NewCFBDecrypter(block, iv)
 	plaintext := make([]byte, len(ciphertext))
 	stream.XORKeyStream(plaintext, ciphertext)
+
 	return string(plaintext), nil
 }
 
