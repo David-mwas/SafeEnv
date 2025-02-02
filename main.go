@@ -66,6 +66,7 @@ func main() {
 	auth.Use(authMiddleware())
 	{
 		auth.POST("/store", storeVariable)
+		auth.GET("/keys", getUserKeys)
 		auth.GET("/retrieve/:key", retrieveVariable)
 		auth.GET("/share/retrieve/:key", retrieveSharedVariable)
 		auth.POST("/share", shareVariable)
@@ -205,18 +206,16 @@ func loginUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"token": tokenString})
 }
-
 func authMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString := c.GetHeader("Authorization")
-		fmt.Println("tokenString", tokenString)
 		if tokenString == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token required"})
 			c.Abort()
 			return
 		}
 
-		// Remove the "Bearer " prefix if present
+		// Remove "Bearer " prefix if present
 		if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
 			tokenString = tokenString[7:]
 		} else {
@@ -225,39 +224,113 @@ func authMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Parse the token
+		// Parse JWT token
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			return jwtSecret, nil
 		})
 
 		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token " + err.Error()})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			c.Abort()
 			return
 		}
+
+		// Extract user ID from token claims
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+			c.Abort()
+			return
+		}
+
+		userID, ok := claims["sub"].(string)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID in token"})
+			c.Abort()
+			return
+		}
+
+		// Store userID in the request context
+		c.Set("userID", userID)
 
 		c.Next()
 	}
 }
 
+func getUserKeys(c *gin.Context) {
+	// Extract user ID from context
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// Fetch all variables created by the user
+	cursor, err := collection.Find(context.TODO(), bson.M{"userID": userID})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch keys"})
+		return
+	}
+	defer cursor.Close(context.TODO())
+
+	var keys []bson.M
+	if err := cursor.All(context.TODO(), &keys); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to decode keys"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"keys": keys})
+}
+
 func storeVariable(c *gin.Context) {
+	// Extract user ID from the JWT
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	var data struct {
 		Key   string `json:"key"`
 		Value string `json:"value"`
 	}
+
 	if err := c.ShouldBindJSON(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
 	encryptedValue, err := encrypt(data.Value)
-	fmt.Println("encryptedValue", encryptedValue)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Encryption failed " + err.Error()})
-		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Encryption failed"})
 		return
 	}
 
-	collection.InsertOne(context.TODO(), bson.M{"key": data.Key, "value": encryptedValue})
+	// Store the variable in the database
+	_, err = collection.InsertOne(context.TODO(), bson.M{
+		"key":       data.Key,
+		"value":     encryptedValue,
+		"userID":    userID,
+		"createdAt": time.Now(),
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store variable"})
+		return
+	}
+
+	// Update the user's document to include this key
+	_, err = collection.Database().Collection("users").UpdateOne(
+		context.TODO(),
+		bson.M{"_id": userID},
+		bson.M{"$addToSet": bson.M{"keys": data.Key}}, // Add key to the user's list
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user data"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Stored successfully"})
 }
 
