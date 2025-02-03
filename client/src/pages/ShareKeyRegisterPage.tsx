@@ -1,17 +1,13 @@
 import useAuthToken from "../../hooks/useAuth";
-import Login from "../components/Login";
 import Home from "../components/Home";
+import Register from "../components/ShareKeyRegister";
 
-function LoginPage() {
+function RegisterPage() {
   const { getItem } = useAuthToken();
   const item = getItem();
   const token = item ? item.token : null;
 
-  return (
-    <>
-      <>{token! ? <Home /> : <Login />}</>;
-    </>
-  );
+  return <>{token! ? <Home /> : <Register />}</>;
 }
 
-export default LoginPage;
+export default RegisterPage;
