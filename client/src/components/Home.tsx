@@ -111,15 +111,20 @@ function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex flex-col items-center p-6 bg-gray-900 text-white">
+    <div className="w-screen min-h-screen flex flex-col items-center p-6 bg-gray-900 text-white pt-[100px]">
       <Header />
-      {/* Button to Open Modal */}
-      <button
-        onClick={() => setIsModalOpen(true)}
-        className="bg-green-600 py-2 px-4 rounded hover:bg-green-700 transition mb-4"
-      >
-        Add New Key
-      </button>
+      <p className="text-center text-lg mb-8">
+        Store your environment variables securely by encryption.
+      </p>
+      <div className="flex w-full max-w-3xl justify-end ">
+        {/* Button to Open Modal */}
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="bg-green-600 py-2 px-4 rounded hover:bg-green-700 transition mb-4"
+        >
+          Add New Key
+        </button>
+      </div>
 
       {/* Modal for Storing Key */}
       {isModalOpen && (
@@ -140,7 +145,7 @@ function Home() {
             />
             <button
               onClick={() => setIsModalOpen(false)}
-              className="mt-2 text-gray-400 hover:text-white"
+              className="mt-2 text-white hover:text-white bg-red-500 px-8 py-2"
             >
               Cancel
             </button>

@@ -56,7 +56,7 @@ func main() {
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"}, // Allow your frontend origin
+		AllowOrigins:     []string{os.Getenv("SAFEENV_FRONTEND_URL")}, // Allow your frontend origin
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"}, // Explicitly allow Authorization
 		ExposeHeaders:    []string{"Content-Length"},
@@ -412,7 +412,7 @@ func shareVariable(c *gin.Context) {
 	encodedKey := base64.URLEncoding.EncodeToString([]byte(data.Key))
 
 	// Generate a shareable link
-	shareLink := fmt.Sprintf("http://localhost:8080/api/v1/share/retrieve/%s", encodedKey)
+	shareLink := fmt.Sprintf(os.Getenv("SAFEENV_FRONTEND_URL")+"/share/retrieve/%s", encodedKey)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Shareable link generated",
