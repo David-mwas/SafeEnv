@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import useAuthToken from "../../hooks/useAuth";
 
 function Login() {
   const [email, setEmail] = useState<string>("");
@@ -10,9 +9,6 @@ function Login() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const navigate = useNavigate();
-
-  const { getItem } = useAuthToken();
-  const { token } = getItem() || { token: null };
 
   const sl: string | null = localStorage.getItem("sharelink");
   console.log("sl", sl);

@@ -4,7 +4,8 @@ import Register from "../components/Register";
 
 function RegisterPage() {
   const { getItem } = useAuthToken();
-  const { token } = getItem();
+  const item = getItem();
+  const token = item ? item.token : null;
 
   return <>{token! ? <Home /> : <Register />}</>;
 }
