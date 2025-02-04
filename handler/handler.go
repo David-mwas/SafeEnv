@@ -1,5 +1,4 @@
-// main.go (Backend API using Go + Gin + MongoDB)
-package main
+package handler
 
 import (
 	"context"
@@ -8,20 +7,16 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
 	"os"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -29,70 +24,6 @@ var collection *mongo.Collection
 
 var encryptionKey []byte
 var jwtSecret []byte
-
-func init() {
-	err := godotenv.Load() // Load .env file
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-}
-
-func main() {
-	encryptionKey = []byte(os.Getenv("SAFEENV_SECRET_KEY"))
-	jwtSecret = []byte(os.Getenv("SAFEENV_JWT_SECRET"))
-
-	if len(encryptionKey) != 32 {
-
-		log.Fatal("Encryption key must be exactly 32 bytes long not: ", len(encryptionKey))
-
-	}
-
-	clientOptions := options.Client().ApplyURI(os.Getenv("SAFEENV_MONGO_URI"))
-
-	client, err := mongo.Connect(context.TODO(), clientOptions)
-	if err != nil {
-		log.Fatal(err)
-	}
-	collection = client.Database("safeenv").Collection("variables")
-
-	r := gin.Default()
-
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{os.Getenv("SAFEENV_FRONTEND_URL")}, // Allow your frontend origin
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"}, // Explicitly allow Authorization
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
-
-	// public routes
-	r.GET("/", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"message": "Welcome to SafeEnv API"})
-	})
-
-	r.POST("/api/v1/register", registerUser)
-	r.POST("/api/v1/login", loginUser)
-
-	// protected routes
-	auth := r.Group("/api/v1")
-	auth.Use(authMiddleware())
-
-	{
-		auth.POST("/store", storeVariable)
-		auth.GET("/keys", getUserKeys)
-		auth.GET("/user", getCurrentUser)
-		auth.DELETE("/keys/:key", deleteKey)
-		auth.PUT("/keys/:key", updateKey)
-
-		auth.GET("/retrieve/:key", retrieveVariable)
-		auth.GET("/share/retrieve/:key", retrieveSharedVariable)
-		auth.POST("/share", shareVariable)
-	}
-
-	// r.GET("/api/v1/audit", auditLogs)
-	r.Run(":8080")
-}
 
 func generateIV() ([]byte, error) {
 	iv := make([]byte, aes.BlockSize)
@@ -145,7 +76,7 @@ func decrypt(encryptedText string) (string, error) {
 }
 
 // auth
-func registerUser(c *gin.Context) {
+func RegisterUser(c *gin.Context) {
 	var user struct {
 		Username string `json:"username"`
 		Email    string `json:"email"`
@@ -180,7 +111,7 @@ func registerUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "User registered successfully"})
 }
 
-func loginUser(c *gin.Context) {
+func LoginUser(c *gin.Context) {
 	var credentials struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -224,7 +155,7 @@ func loginUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"token": tokenString})
 }
-func authMiddleware() gin.HandlerFunc {
+func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenString := c.GetHeader("Authorization")
 		if tokenString == "" {
@@ -276,7 +207,7 @@ func authMiddleware() gin.HandlerFunc {
 }
 
 // Get Current User Details
-func getCurrentUser(c *gin.Context) {
+func GetCurrentUser(c *gin.Context) {
 	userID, exists := c.Get("userID")
 
 	if !exists {
@@ -312,7 +243,7 @@ func getCurrentUser(c *gin.Context) {
 }
 
 // Delete a Key
-func deleteKey(c *gin.Context) {
+func DeleteKey(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
@@ -344,7 +275,7 @@ func deleteKey(c *gin.Context) {
 }
 
 // Update a Key’s Value
-func updateKey(c *gin.Context) {
+func UpdateKey(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
@@ -384,7 +315,7 @@ func updateKey(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Key updated successfully"})
 }
 
-func getUserKeys(c *gin.Context) {
+func GetUserKeys(c *gin.Context) {
 	// Extract user ID from context
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -409,7 +340,7 @@ func getUserKeys(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"keys": keys})
 }
 
-func storeVariable(c *gin.Context) {
+func StoreVariable(c *gin.Context) {
 	// Extract user ID from the JWT
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -461,7 +392,7 @@ func storeVariable(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Stored successfully"})
 }
 
-func retrieveSharedVariable(c *gin.Context) {
+func RetrieveSharedVariable(c *gin.Context) {
 	encodedKey := c.Param("key")
 
 	// Decode the Base64 key
@@ -491,7 +422,7 @@ func retrieveSharedVariable(c *gin.Context) {
 	})
 }
 
-func retrieveVariable(c *gin.Context) {
+func RetrieveVariable(c *gin.Context) {
 	key := c.Param("key")
 	var result struct {
 		Value string `bson:"value"`
@@ -504,7 +435,7 @@ func retrieveVariable(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"key": key, "value": decryptedValue})
 }
 
-func shareVariable(c *gin.Context) {
+func ShareVariable(c *gin.Context) {
 	var data struct {
 		Key string `json:"key"`
 	}
@@ -534,9 +465,3 @@ func shareVariable(c *gin.Context) {
 		"link":    shareLink,
 	})
 }
-
-// func auditLogs(c *gin.Context) {
-// 	// Dummy audit log response for now
-// 	logs := []string{"User1 stored KEY1", "User2 retrieved KEY2"}
-// 	c.JSON(http.StatusOK, gin.H{"logs": logs})
-// }
