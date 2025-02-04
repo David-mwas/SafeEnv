@@ -42,10 +42,10 @@ func init() {
 	}
 
 	// Connect to MongoDB once at startup
-	var connErr error
-	client, connErr = connectDB()
-	if connErr != nil {
-		log.Fatalf("Database connection failed: %v", connErr)
+	clientOptions := options.Client().ApplyURI(os.Getenv("SAFEENV_MONGO_URI"))
+	client, err := mongo.Connect(context.Background(), clientOptions)
+	if err != nil {
+		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
 
 	// Select the collection
@@ -68,20 +68,6 @@ func init() {
 
 	// Register routes
 	routes.Register(app)
-}
-
-func connectDB() (*mongo.Client, error) {
-	clientOptions := options.Client().ApplyURI(os.Getenv("SAFEENV_MONGO_URI"))
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	client, err := mongo.Connect(ctx, clientOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	return client, nil
 }
 
 // Vercel Lambda Handler
