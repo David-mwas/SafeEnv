@@ -35,14 +35,24 @@ func init() {
 		log.Fatal("Encryption key must be exactly 32 bytes long")
 	}
 
+	// Ensure SAFEENV_MONGO_URI exists
+	mongoURI := os.Getenv("SAFEENV_MONGO_URI")
+	if mongoURI == "" {
+		log.Fatal("SAFEENV_MONGO_URI environment variable is not set")
+	}
+
 	// Connect to MongoDB once at startup
-	client, err = connectDB()
-	if err != nil {
-		log.Fatalf("Database connection failed: %v", err)
+	var connErr error
+	client, connErr = connectDB()
+	if connErr != nil {
+		log.Fatalf("Database connection failed: %v", connErr)
 	}
 
 	// Select the collection
 	collection = client.Database("safeenv").Collection("variables")
+	if collection == nil {
+		log.Fatal("MongoDB collection is nil")
+	}
 
 	// Initialize Gin
 	app = gin.Default()
