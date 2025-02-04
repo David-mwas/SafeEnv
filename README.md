@@ -1,7 +1,12 @@
-<div align="center">
-<img src="asssets/safeenv-high-resolution-logo-removebg-preview.png" alt="SafeEnv logo" width=250>
+# SafeEnv
 
-**SafeEnv** is a web-based solution for securely storing and retrieving environment variables. The frontend is built with **Go** ,**React**, and **Tailwind CSS**
+#### **SafeEnv** is a web-based solution for securely storing and retrieving environment variables. Built with **Go** ,**React**, and **Tailwind CSS**
+
+---
+
+<div align="center">
+
+<img src="asssets/safeenv.png" alt="SafeEnv logo" >
 
 </div>
 
@@ -28,7 +33,7 @@ Make sure you have the following installed:
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/your-username/safeenv-frontend.git
+   git clone https://github.com/David-mwas/safeenv-frontend.git
    ```
 
 # SafeEnv API Documentation

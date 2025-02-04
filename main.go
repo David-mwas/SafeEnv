@@ -19,6 +19,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
@@ -79,6 +80,10 @@ func main() {
 	{
 		auth.POST("/store", storeVariable)
 		auth.GET("/keys", getUserKeys)
+		auth.GET("/user", getCurrentUser)
+		auth.DELETE("/keys/:key", deleteKey)
+		auth.PUT("/keys/:key", updateKey)
+
 		auth.GET("/retrieve/:key", retrieveVariable)
 		auth.GET("/share/retrieve/:key", retrieveSharedVariable)
 		auth.POST("/share", shareVariable)
@@ -267,6 +272,115 @@ func authMiddleware() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+// Get Current User Details
+func getCurrentUser(c *gin.Context) {
+	userID, exists := c.Get("userID")
+
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// Convert userID from string to ObjectID
+	objectID, err := primitive.ObjectIDFromHex(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+	fmt.Println(userID, objectID)
+	var user struct {
+		ID       string `bson:"_id"`
+		Username string `bson:"username"`
+		Email    string `bson:"email"`
+	}
+
+	err = collection.Database().Collection("users").FindOne(context.TODO(), bson.M{"_id": objectID}).Decode(&user)
+	if err != nil {
+		fmt.Println("error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"id":       user.ID,
+		"username": user.Username,
+		"email":    user.Email,
+	})
+}
+
+// Delete a Key
+func deleteKey(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	key := c.Param("key")
+
+	// Delete the key from the database
+	_, err := collection.DeleteOne(context.TODO(), bson.M{"key": key, "userID": userID})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete key"})
+		return
+	}
+
+	// Remove key from user's keys list
+	_, err = collection.Database().Collection("users").UpdateOne(
+		context.TODO(),
+		bson.M{"_id": userID},
+		bson.M{"$pull": bson.M{"keys": key}},
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user data"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Key deleted successfully"})
+}
+
+// Update a Key’s Value
+func updateKey(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	key := c.Param("key")
+
+	var data struct {
+		NewValue string `json:"newValue"`
+		NewKey   string `json:"newKey"`
+	}
+
+	if err := c.ShouldBindJSON(&data); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	encryptedValue, err := encrypt(data.NewValue)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Encryption failed"})
+		return
+	}
+
+	// Update the stored key value
+	_, err = collection.UpdateOne(
+		context.TODO(),
+		bson.M{"key": key, "userID": userID},
+		bson.M{"$set": bson.M{"key": data.NewKey, "value": encryptedValue}},
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update key"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Key updated successfully"})
 }
 
 func getUserKeys(c *gin.Context) {
