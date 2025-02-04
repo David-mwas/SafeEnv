@@ -5,10 +5,17 @@ import (
 	"os"
 
 	"github.com/David-mwas/SafeEnv/handler"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func Register(app *gin.Engine) {
+
+	// cors middleware
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: []string{os.Getenv("SAFEENV_FRONTEND_URL")},
+		AllowHeaders: []string{"Origin", "Content-Type", "Accept"},
+	}))
 
 	// CORS Configuration
 	app.Use(func(c *gin.Context) {
