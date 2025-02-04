@@ -2,7 +2,6 @@ package routes
 
 import (
 	"net/http"
-	"os"
 
 	"github.com/David-mwas/SafeEnv/handler"
 	"github.com/gin-contrib/cors"
@@ -11,23 +10,13 @@ import (
 
 func Register(app *gin.Engine) {
 
-	// cors middleware
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: []string{os.Getenv("SAFEENV_FRONTEND_URL")},
-		AllowHeaders: []string{"Origin", "Content-Type", "Accept"},
+		AllowOrigins:     []string{"https://safe-env.vercel.app"}, // Hardcode for testing
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowCredentials: true,
 	}))
 
-	// CORS Configuration
-	app.Use(func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", os.Getenv("SAFEENV_FRONTEND_URL"))
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization")
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-		c.Next()
-	})
 	// Public Routes
 	app.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "Welcome to SafeEnv API"})
