@@ -47,8 +47,7 @@ func main() {
 
 	}
 
-	clientOptions := options.Client().ApplyURI(os.Getenv("SAFEENV_MONGO_URI"))
-
+	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
 		log.Fatal(err)
@@ -292,9 +291,9 @@ func getCurrentUser(c *gin.Context) {
 	}
 	fmt.Println(userID, objectID)
 	var user struct {
-		ID       primitive.ObjectID `bson:"_id"`
-		Username string             `bson:"username"`
-		Email    string             `bson:"email"`
+		ID       string `bson:"_id"`
+		Username string `bson:"username"`
+		Email    string `bson:"email"`
 	}
 
 	err = collection.Database().Collection("users").FindOne(context.TODO(), bson.M{"_id": objectID}).Decode(&user)

@@ -77,6 +77,11 @@ func decrypt(encryptedText string) (string, error) {
 
 // auth
 func RegisterUser(c *gin.Context) {
+
+	if collection == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database not initialized"})
+		return
+	}
 	var user struct {
 		Username string `json:"username"`
 		Email    string `json:"email"`
