@@ -9,7 +9,7 @@ function NavBar({ data, handleLogout }: NavaBarProps) {
   return (
     <motion.div
       initial={{ x: 1000, opacity: 0 }}
-      transition={{ type: "spring", stiffness:200 }}
+      transition={{ type: "spring", stiffness:300 }}
       animate={{ x: 0, opacity: 1 }}
       className="flex sm:hidden absolute right-0 top-[80px]  bg-gray-700 z-[888] w-[250px] h-[250px] duration-75 transition-all ease-in-out justify-center items-center rounded-b-xl"
     >

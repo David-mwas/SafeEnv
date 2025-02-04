@@ -79,8 +79,20 @@ function TableData({
       if (retrievedKeys[key]) {
         envContent += `${key}=${retrievedKeys[key]}\n`;
       }
+      // else {
+      //   toast.error(
+      //     "First retrieve keys or a key to download.,No keys found for download."
+      //   );
+      //   return;
+      // }
     });
+    if (envContent === "") {
+      toast.error(
+        "First retrieve keys or a key then select to download, No keys found for download."
+      );
 
+      return;
+    }
     const blob = new Blob([envContent], { type: "text/plain" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -88,6 +100,10 @@ function TableData({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    toast.success("Downloaded env file successfully!", {
+      position: "top-right",
+    });
   };
 
   const handleCopy = (text: string) => {
