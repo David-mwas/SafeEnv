@@ -106,7 +106,8 @@ function Home() {
       );
 
       // console.log("Retrieved key:", res.data.value);
-      setRetrievedKeys(() => ({ [keyID]: res.data.value })); // Store retrieved value
+      // setRetrievedKeys(() => ({ [keyID]: res.data.value })); // Store retrieved value
+      setRetrievedKeys((prev) => ({ ...prev, [keyID]: res.data.value }));
     } catch (error) {
       console.error("Error retrieving key:", error);
     }

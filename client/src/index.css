@@ -12,7 +12,9 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
+body {
+  overflow-x: hidden;
+}
 a {
   font-weight: 500;
   color: #646cff;
@@ -25,6 +27,26 @@ a:hover {
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
+}
+
+/* Custom Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1f2937; /* Tailwind gray-800 */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4b5563; /* Tailwind gray-600 */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6b7280; /* Tailwind gray-500 */
 }
 
 @media (prefers-color-scheme: light) {
