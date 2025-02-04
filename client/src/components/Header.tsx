@@ -1,16 +1,7 @@
 import { motion } from "framer-motion";
-import {
-  FaBars,
-  FaCloudMoon,
-  FaCross,
-  FaMoon,
-  FaRegMoon,
-  FaSun,
-  FaTimes,
-  FaUserCircle,
-} from "react-icons/fa";
+import { FaBars, FaTimes, FaUserCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import img from "../../../asssets/safeenv-high-resolution-logo-removebg-preview.png";
+import img from "/safeenv-high-resolution-logo-removebg-preview.png";
 import useAuthToken from "../../hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
