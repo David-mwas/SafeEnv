@@ -5,10 +5,8 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/David-mwas/SafeEnv/routes"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -50,13 +48,13 @@ func init() {
 	// app = gin.Default()
 
 	// Apply CORS Middleware
-	app.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"https://safe-env.vercel.app"}, // Allow frontend requests
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
+	// app.Use(cors.New(cors.Config{
+	// 	AllowOrigins:     []string{"https://safe-env.vercel.app"}, // Allow frontend requests
+	// 	AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+	// 	AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+	// 	AllowCredentials: true,
+	// 	MaxAge:           12 * time.Hour,
+	// }))
 
 	// Register routes
 	routes.Register(app)
