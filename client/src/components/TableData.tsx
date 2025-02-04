@@ -5,9 +5,14 @@ import {
   FaShareAlt,
   FaWhatsapp,
   FaEnvelope,
+  FaPencilAlt,
+  FaTrash,
 } from "react-icons/fa";
+import { motion } from "framer-motion";
 import { convertDateTime } from "../../hooks/useDateTime";
 import toast, { Toaster } from "react-hot-toast";
+import EditKeyForm from "./EditKeyForm";
+import { useState } from "react";
 
 interface Key {
   _id: string;
@@ -23,6 +28,11 @@ interface TableDataProps {
   copiedKey: string | null;
   shareableLinks: { [key: string]: string };
   shareKey: (key: string) => void;
+  handleDeleteKey: (key: string) => void;
+  isEditModalOpen: boolean;
+  openEditModal: () => void;
+  refetch: () => void;
+  token: string | null;
 }
 
 function TableData({
@@ -33,7 +43,13 @@ function TableData({
   copiedKey,
   shareableLinks,
   shareKey,
+  handleDeleteKey,
+  openEditModal,
+  isEditModalOpen,
+  refetch,
+  token,
 }: TableDataProps) {
+  const [shareModalKey, setShareModalKey] = useState<string | null>(null);
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("Copied to clipboard!", { position: "top-right" });
@@ -70,6 +86,42 @@ function TableData({
                       <FaEye className="inline mr-1" /> Retrieve
                     </button>
                   )}
+                  {retrievedKeys[envVar.key] && (
+                    <button
+                      onClick={() => openEditModal()}
+                      className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition"
+                    >
+                      <FaPencilAlt className="inline mr-1" />
+                      Edit
+                    </button>
+                  )}
+                  {/* Modal for Editing Key */}
+                  {isEditModalOpen && retrievedKeys[envVar.key] && (
+                    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        className="bg-gray-800 p-6 rounded-lg w-full max-w-md"
+                      >
+                        <h2 className="text-xl mb-2">
+                          Edit a Key {retrievedKeys[envVar.key]}
+                        </h2>
+                        <EditKeyForm
+                          token={token}
+                          refetch={refetch}
+                          k={envVar.key}
+                          v={retrievedKeys[envVar.key]}
+                        />
+                        <button
+                          onClick={() => openEditModal()}
+                          className="mt-2 text-white hover:text-white bg-red-500 px-8 py-2"
+                        >
+                          Cancel
+                        </button>
+                      </motion.div>
+                    </div>
+                  )}
 
                   {retrievedKeys[envVar.key] && (
                     <button
@@ -80,71 +132,69 @@ function TableData({
                       {copiedKey === envVar.key ? "Copied!" : "Copy"}
                     </button>
                   )}
-
-                  {/* Share Button with Menu */}
-                  <Menu as="div" className="relative">
-                    <Menu.Button
-                      onClick={() => shareKey(envVar.key)}
-                      className="bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 transition"
-                    >
-                      <FaShareAlt className="inline mr-1" /> Share
-                    </Menu.Button>
-
-                    {shareableLinks[envVar.key] && (
-                      <Menu.Items className="absolute right-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded shadow-md p-2 text-sm z-50">
-                        <Menu.Item>
-                          {({ active }) => (
-                            <a
-                              href={`https://api.whatsapp.com/send?text=Here is the env key: ${
-                                shareableLinks[envVar.key]
-                              }`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={`flex items-center gap-2 px-2 py-2 rounded ${
-                                active
-                                  ? "bg-gray-800 text-green-400"
-                                  : "text-white"
-                              }`}
-                            >
-                              <FaWhatsapp /> WhatsApp
-                            </a>
-                          )}
-                        </Menu.Item>
-
-                        <Menu.Item>
-                          {({ active }) => (
-                            <a
-                              href={`mailto:?subject=Secure Key Link&body=Here is the env key: ${
-                                shareableLinks[envVar.key]
-                              }`}
-                              className={`flex items-center gap-2 px-2 py-2 rounded ${
-                                active
-                                  ? "bg-gray-800 text-yellow-400"
-                                  : "text-white"
-                              }`}
-                            >
-                              <FaEnvelope /> Email
-                            </a>
-                          )}
-                        </Menu.Item>
-
-                        <Menu.Item>
-                          {({ active }) => (
-                            <button
-                              onClick={() =>
-                                handleCopy(shareableLinks[envVar.key])
-                              }
-                              className={`flex items-center gap-2 w-full text-left px-2 py-2 rounded ${
-                                active ? "bg-gray-800 text-white" : "text-white"
-                              }`}
-                            >
-                              <FaCopy /> Copy Link
-                            </button>
-                          )}
-                        </Menu.Item>
-                      </Menu.Items>
+                  {/* Share Button */}
+                  <button
+                    onClick={() => {
+                      shareKey(envVar.key);
+                      setShareModalKey(envVar.key);
+                    }}
+                    className="bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 transition"
+                  >
+                    <FaShareAlt className="inline mr-1" /> Share
+                  </button>
+                  {/* Share Modal */}
+                  {shareModalKey === envVar.key &&
+                    shareableLinks[envVar.key] && (
+                      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          className="bg-gray-800 p-6 rounded-lg w-full max-w-sm"
+                        >
+                          <h2 className="text-xl mb-4">Share Key</h2>
+                          <a
+                            href={`https://api.whatsapp.com/send?text=Here is the env key: ${
+                              shareableLinks[envVar.key]
+                            }`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-green-400 hover:text-green-500 mb-2"
+                          >
+                            <FaWhatsapp /> Share via WhatsApp
+                          </a>
+                          <a
+                            href={`mailto:?subject=Secure Key Link&body=Here is the env key: ${
+                              shareableLinks[envVar.key]
+                            }`}
+                            className="flex items-center gap-2 text-yellow-400 hover:text-yellow-500 mb-2"
+                          >
+                            <FaEnvelope /> Share via Email
+                          </a>
+                          <button
+                            onClick={() =>
+                              handleCopy(shareableLinks[envVar.key])
+                            }
+                            className="flex items-center gap-2 text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded w-full mb-2"
+                          >
+                            <FaCopy /> Copy Link
+                          </button>
+                          <button
+                            onClick={() => setShareModalKey(null)}
+                            className="text-white bg-red-500 hover:bg-red-600 px-4 py-2 rounded w-full"
+                          >
+                            Close
+                          </button>
+                        </motion.div>
+                      </div>
                     )}
-                  </Menu>
+                  <button
+                    onClick={() => handleDeleteKey(envVar.key)}
+                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+                  >
+                    <FaTrash className="inline mr-1" />
+                    Delete
+                  </button>
                 </td>
               </tr>
             ))

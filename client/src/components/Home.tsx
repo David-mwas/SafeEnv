@@ -8,6 +8,7 @@ import useAuthToken from "../../hooks/useAuth";
 import Header from "./Header";
 import StroreKeysForm from "./StroreKeysForm";
 import TableData from "./TableData";
+import toast from "react-hot-toast";
 
 export type Key = {
   _id: string;
@@ -33,7 +34,7 @@ function Home() {
 
   // Fetch stored keys
   const { data, refetch } = useQuery({
-    queryKey: ["envVars"],
+    queryKey: ["user"],
     queryFn: async () => {
       if (!token) return { keys: [] };
       const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/keys`, {
@@ -43,7 +44,7 @@ function Home() {
     },
     enabled: !!token,
   });
-
+  // console.log("data",data)
   // Store new key
   const mutation = useMutation({
     mutationFn: async (newVar: { key: string; value: string }) => {
@@ -53,6 +54,36 @@ function Home() {
     },
     onSuccess: () => refetch(),
   });
+  const deleteMutation = useMutation({
+    mutationFn: async (key: string) => {
+      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/keys/${key}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    },
+    onSuccess: () => {
+      refetch();
+      toast.success("Key deleted successfully");
+    },
+  });
+
+  const handleDeleteKey = (key: string) => {
+    const data = prompt(
+      "To delete key " + key + " Type I want to delete key " + key
+    );
+    const str = "I want to delete key " + key;
+    if (!data) {
+      toast.error("You never typed anything " + str);
+      return;
+    }
+    console.log(data?.toLocaleLowerCase() == str?.toLocaleLowerCase());
+
+    if (data?.toLocaleLowerCase() == str?.toLocaleLowerCase()) {
+      deleteMutation.mutate(key);
+    } else {
+      toast.error("Wrong!! " + str);
+      return;
+    }
+  };
 
   // Handle form submission
   const handleStore = (e: React.FormEvent<HTMLFormElement>) => {
@@ -75,7 +106,7 @@ function Home() {
       );
 
       // console.log("Retrieved key:", res.data.value);
-      setRetrievedKeys((prev) => ({ ...prev, [keyID]: res.data.value })); // Store retrieved value
+      setRetrievedKeys(() => ({ [keyID]: res.data.value })); // Store retrieved value
     } catch (error) {
       console.error("Error retrieving key:", error);
     }
@@ -109,14 +140,18 @@ function Home() {
   };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIstEditModalOpen] = useState(false);
+  const openEditModal = () => {
+    setIstEditModalOpen(!isEditModalOpen);
+  };
 
   return (
-    <div className="w-screen min-h-screen flex flex-col items-center p-6 bg-gray-900 text-white pt-[100px]">
+    <div className="w-screen min-h-screen flex flex-col items-center p-6 bg-gray-900 text-white pt-[100px] ">
       <Header />
-      <p className="text-center text-lg mb-8">
-        Store your environment variables securely by encryption.
-      </p>
-      <div className="flex w-full max-w-3xl justify-end ">
+      <b className="text-left text-2xl mb-8 animate-pulse w-full max-w-4xl">
+        Store your environment variables securely.
+      </b>
+      <div className="flex w-full max-w-4xl justify-end ">
         {/* Button to Open Modal */}
         <button
           onClick={() => setIsModalOpen(true)}
@@ -157,10 +192,10 @@ function Home() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="w-full max-w-3xl"
+        className="w-full max-w-4xl"
       >
         <h2 className="text-xl mb-2">Stored Variables</h2>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-auto">
           <TableData
             data={data}
             retrievedKeys={retrievedKeys}
@@ -169,6 +204,11 @@ function Home() {
             copiedKey={copiedKey}
             shareableLinks={shareableLinks}
             shareKey={shareKey}
+            handleDeleteKey={handleDeleteKey}
+            isEditModalOpen={isEditModalOpen}
+            openEditModal={openEditModal}
+            refetch={refetch}
+            token={token}
           />
         </div>
       </motion.div>
