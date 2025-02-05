@@ -31,7 +31,7 @@ function Login() {
         }
       );
       console.log(res);
-      if (res.status === 200) {
+      if (res.status == 200) {
         toast.success("Login successful");
         console.log("res", res);
         localStorage.setItem("safeEnv", res.data.token);
