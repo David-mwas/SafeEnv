@@ -533,6 +533,50 @@ func ShareVariable(c *gin.Context) {
 	})
 }
 
+func storeVariablesBulk(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var request struct {
+		Variables map[string]string `json:"variables"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var documents []interface{}
+
+	for key, value := range request.Variables {
+		encryptedValue, err := encrypt(value)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Encryption failed",
+				"text": err,
+			})
+			return
+		}
+
+		documents = append(documents, bson.M{
+			"userID":    userID,
+			"key":       key,
+			"value":     encryptedValue,
+			"createdAt": time.Now(),
+		})
+	}
+
+	_, err := collection.InsertMany(context.TODO(), documents)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Variables stored successfully"})
+}
+
 func Register(app *gin.Engine) {
 
 	app.Use(cors.New(cors.Config{
@@ -562,6 +606,7 @@ func Register(app *gin.Engine) {
 		auth.GET("/retrieve/:key", RetrieveVariable)
 		auth.GET("/share/retrieve/:key", RetrieveSharedVariable)
 		auth.POST("/share", ShareVariable)
+		auth.POST("/store/bulk", storeVariablesBulk)
 	}
 }
 
