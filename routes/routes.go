@@ -2,6 +2,7 @@ package routes
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/David-mwas/SafeEnv/handler"
 	"github.com/gin-contrib/cors"
@@ -11,7 +12,7 @@ import (
 func Register(app *gin.Engine) {
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"https://safe-env.vercel.app"}, // Hardcode for testing
+		AllowOrigins:     []string{os.Getenv("SAFEENV_FRONTEND_URL")}, // Hardcode for testing
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		AllowCredentials: true,
