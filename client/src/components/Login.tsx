@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import toast, { Toaster } from "react-hot-toast";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -30,8 +31,9 @@ function Login() {
         }
       );
       console.log(res);
-      if (res.statusText === "OK") {
-        console.log(res);
+      if (res.status === 200) {
+        toast.success("Login successful");
+        console.log("res", res);
         localStorage.setItem("safeEnv", res.data.token);
         window.location.href = "/";
       }
@@ -46,6 +48,7 @@ function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
+      <Toaster />
       <motion.form
         className="bg-gray-800 p-6 rounded-xl shadow-lg w-96"
         initial={{ opacity: 0, scale: 0.9 }}
