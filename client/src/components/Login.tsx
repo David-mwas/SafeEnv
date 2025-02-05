@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
+import { FaSpinner } from "react-icons/fa";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -30,10 +31,8 @@ function Login() {
           password,
         }
       );
-      console.log(res);
       if (res.status == 200) {
         toast.success("Login successful");
-        console.log("res", res);
         localStorage.setItem("safeEnv", res.data.token);
         window.location.href = "/";
       }
@@ -81,7 +80,14 @@ function Login() {
           className="w-full mt-4 bg-green-600 py-2 rounded hover:bg-green-700 transition"
           disabled={loading}
         >
-          {loading ? "Logging in..." : "Login"}
+          {loading ? (
+            <div className="flex items-center justify-center gap-2">
+              <FaSpinner className="animate-spin" />
+              Logging in ...
+            </div>
+          ) : (
+            "Login"
+          )}
         </button>
 
         <p className="mt-4 text-center text-sm">

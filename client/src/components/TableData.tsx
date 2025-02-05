@@ -7,6 +7,7 @@ import {
   FaPencilAlt,
   FaTrash,
   FaDownload,
+  FaSpinner,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { convertDateTime } from "../../hooks/useDateTime";
@@ -33,6 +34,7 @@ interface TableDataProps {
   openEditModal: () => void;
   refetch: () => void;
   token: string | null;
+  isLoadingKeys: boolean;
 }
 
 function TableData({
@@ -48,6 +50,7 @@ function TableData({
   isEditModalOpen,
   refetch,
   token,
+  isLoadingKeys,
 }: TableDataProps) {
   const [shareModalKey, setShareModalKey] = useState<string | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
@@ -87,9 +90,7 @@ function TableData({
       // }
     });
     if (envContent === "") {
-      toast.error(
-        "First retrieve keys or a key then select to download, No keys found for download."
-      );
+      toast.error("First retrieve keys or a key then select to download");
 
       return;
     }
@@ -126,7 +127,7 @@ function TableData({
       <div className="mt-4 mb-4">
         <button
           onClick={downloadEnvFile}
-          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-500 transition"
+          className="bg-green-500 text-white px-4 py-2 rounded transition hover:bg-green-600"
         >
           <FaDownload className="inline mr-1" />
           Download Selected Keys
@@ -148,7 +149,18 @@ function TableData({
             <th className="border border-gray-700 p-2">Created At</th>
             <th className="border border-gray-700 p-2">Actions</th>
           </tr>
+          {isLoadingKeys && (
+            <tr>
+              <td colSpan={4} className="p-4 text-center text-gray-400">
+                <div className="flex items-center justify-center gap-2">
+                  <FaSpinner className="animate-spin" />
+                  Loading keys...
+                </div>
+              </td>
+            </tr>
+          )}
         </thead>
+
         <tbody>
           {data?.keys?.length ? (
             data.keys.map((envVar: Key) => (
@@ -197,9 +209,7 @@ function TableData({
                           exit={{ opacity: 0, scale: 0.9 }}
                           className="bg-gray-800 p-6 rounded-lg w-full max-w-md"
                         >
-                          <h2 className="text-xl mb-2">
-                            Edit a Key {retrievedKeys[envVar.key]}
-                          </h2>
+                          <h2 className="text-xl mb-2">Edit a Key</h2>
                           <EditKeyForm
                             token={token}
                             refetch={refetch}
@@ -215,42 +225,6 @@ function TableData({
                         </motion.div>
                       </div>
                     )}
-                  {/* {retrievedKeys[envVar.key] && (
-                    <button
-                      onClick={() => openEditModal()}
-                      className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition"
-                    >
-                      <FaPencilAlt className="inline mr-1" />
-                      Edit
-                    </button>
-                  )}
-
-                  {isEditModalOpen && retrievedKeys[envVar.key] && (
-                    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        className="bg-gray-800 p-6 rounded-lg w-full max-w-md"
-                      >
-                        <h2 className="text-xl mb-2">
-                          Edit a Key {retrievedKeys[envVar.key]}
-                        </h2>
-                        <EditKeyForm
-                          token={token}
-                          refetch={refetch}
-                          k={envVar.key}
-                          v={retrievedKeys[envVar.key]}
-                        />
-                        <button
-                          onClick={() => openEditModal()}
-                          className="mt-2 text-white hover:text-white bg-red-500 px-8 py-2"
-                        >
-                          Cancel
-                        </button>
-                      </motion.div>
-                    </div>
-                  )} */}
 
                   {retrievedKeys[envVar.key] && (
                     <button
@@ -335,154 +309,6 @@ function TableData({
             </tr>
           )}
         </tbody>
-
-        {/* <thead>
-          <tr className="bg-gray-800 text-white">
-            <th className="border border-gray-700 p-2">Key</th>
-            <th className="border border-gray-700 p-2">Created At</th>
-            <th className="border border-gray-700 p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data?.keys?.length ? (
-            data.keys.map((envVar: Key) => (
-              <tr
-                key={envVar._id}
-                className="text-center bg-gray-800 hover:bg-gray-700"
-              >
-                <td className="border border-gray-700 p-2">{envVar.key}</td>
-                <td className="border border-gray-700 p-2">
-                  {convertDateTime(envVar.createdAt)}
-                </td>
-                <td className="border border-gray-700 p-2 flex items-center justify-center gap-2 relative">
-                  {!retrievedKeys[envVar.key] && (
-                    <button
-                      onClick={() => retrieveKey(envVar.key)}
-                      className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition"
-                    >
-                      <FaEye className="inline mr-1" /> Retrieve
-                    </button>
-                  )}
-                  {retrievedKeys[envVar.key] && (
-                    <button
-                      onClick={() => openEditModal()}
-                      className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition"
-                    >
-                      <FaPencilAlt className="inline mr-1" />
-                      Edit
-                    </button>
-                  )}
-                  
-                  {isEditModalOpen && retrievedKeys[envVar.key] && (
-                    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        className="bg-gray-800 p-6 rounded-lg w-full max-w-md"
-                      >
-                        <h2 className="text-xl mb-2">
-                          Edit a Key {retrievedKeys[envVar.key]}
-                        </h2>
-                        <EditKeyForm
-                          token={token}
-                          refetch={refetch}
-                          k={envVar.key}
-                          v={retrievedKeys[envVar.key]}
-                        />
-                        <button
-                          onClick={() => openEditModal()}
-                          className="mt-2 text-white hover:text-white bg-red-500 px-8 py-2"
-                        >
-                          Cancel
-                        </button>
-                      </motion.div>
-                    </div>
-                  )}
-
-                  {retrievedKeys[envVar.key] && (
-                    <button
-                      onClick={() => copyToClipboard(envVar.key)}
-                      className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
-                    >
-                      <FaCopy className="inline mr-1" />
-                      {copiedKey === envVar.key ? "Copied!" : "Copy"}
-                    </button>
-                  )}
-                 
-                  <button
-                    onClick={() => {
-                      shareKey(envVar.key);
-                      setShareModalKey(envVar.key);
-                    }}
-                    className="bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 transition"
-                  >
-                    <FaShareAlt className="inline mr-1" /> Share
-                  </button>
-                 
-                  {shareModalKey === envVar.key &&
-                    shareableLinks[envVar.key] && (
-                      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.9 }}
-                          className="bg-gray-800 p-6 rounded-lg w-full max-w-sm"
-                        >
-                          <h2 className="text-xl mb-4">Share Key</h2>
-                          <a
-                            href={`https://api.whatsapp.com/send?text=Here is the env key: ${
-                              shareableLinks[envVar.key]
-                            }`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-green-400 hover:text-green-500 mb-2"
-                          >
-                            <FaWhatsapp /> Share via WhatsApp
-                          </a>
-                          <a
-                            href={`mailto:?subject=Secure Key Link&body=Here is the env key: ${
-                              shareableLinks[envVar.key]
-                            }`}
-                            className="flex items-center gap-2 text-yellow-400 hover:text-yellow-500 mb-2"
-                          >
-                            <FaEnvelope /> Share via Email
-                          </a>
-                          <button
-                            onClick={() =>
-                              handleCopy(shareableLinks[envVar.key])
-                            }
-                            className="flex items-center gap-2 text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded w-full mb-2"
-                          >
-                            <FaCopy /> Copy Link
-                          </button>
-                          <button
-                            onClick={() => setShareModalKey(null)}
-                            className="text-white bg-red-500 hover:bg-red-600 px-4 py-2 rounded w-full"
-                          >
-                            Close
-                          </button>
-                        </motion.div>
-                      </div>
-                    )}
-                  <button
-                    onClick={() => handleDeleteKey(envVar.key)}
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-                  >
-                    <FaTrash className="inline mr-1" />
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={3} className="p-4 text-center text-gray-400">
-                No keys found, create one.
-              </td>
-            </tr>
-          )}
-        </tbody> */}
       </table>
     </div>
   );

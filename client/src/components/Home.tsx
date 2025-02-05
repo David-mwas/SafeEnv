@@ -33,7 +33,11 @@ function Home() {
   const { token } = getItem() || { token: null };
 
   // Fetch stored keys
-  const { data, refetch } = useQuery({
+  const {
+    data,
+    refetch,
+    isLoading: isLoadingKeys,
+  } = useQuery({
     queryKey: ["user"],
     queryFn: async () => {
       if (!token) return { keys: [] };
@@ -44,7 +48,7 @@ function Home() {
     },
     enabled: !!token,
   });
-  // console.log("data",data)
+
   // Store new key
   const mutation = useMutation({
     mutationFn: async (newVar: { key: string; value: string }) => {
@@ -75,7 +79,7 @@ function Home() {
       toast.error("You never typed anything " + str);
       return;
     }
-    console.log(data?.toLocaleLowerCase() == str?.toLocaleLowerCase());
+  
 
     if (data?.toLocaleLowerCase() == str?.toLocaleLowerCase()) {
       deleteMutation.mutate(key);
@@ -105,14 +109,14 @@ function Home() {
         }
       );
 
-      // console.log("Retrieved key:", res.data.value);
+      
       // setRetrievedKeys(() => ({ [keyID]: res.data.value })); // Store retrieved value
       setRetrievedKeys((prev) => ({ ...prev, [keyID]: res.data.value }));
     } catch (error) {
       console.error("Error retrieving key:", error);
     }
   };
-  console.log("retrievedKeys", retrievedKeys);
+
   // Copy retrieved key to clipboard
   const copyToClipboard = (keyID: string) => {
     const value = retrievedKeys[keyID];
@@ -210,6 +214,7 @@ function Home() {
             openEditModal={openEditModal}
             refetch={refetch}
             token={token}
+            isLoadingKeys={isLoadingKeys}
           />
         </div>
       </motion.div>

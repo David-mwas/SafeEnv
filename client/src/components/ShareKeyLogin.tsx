@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { FaSpinner } from "react-icons/fa";
 
 function Login() {
   const [email, setEmail] = useState<string>("");
@@ -11,7 +12,6 @@ function Login() {
   const navigate = useNavigate();
 
   const sl: string | null = localStorage.getItem("sharelink");
-  console.log("sl", sl);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -32,9 +32,8 @@ function Login() {
           password,
         }
       );
-      console.log(res);
+
       if (res.status == 200) {
-        console.log(res);
         localStorage.setItem("safeEnv", res?.data?.token);
         if (sl) {
           window.location.href = sl;
@@ -85,7 +84,14 @@ function Login() {
           className="w-full mt-4 bg-green-600 py-2 rounded hover:bg-green-700 transition"
           disabled={loading}
         >
-          {loading ? "Logging in..." : "Login"}
+          {loading ? (
+            <div className="flex items-center justify-center gap-2">
+              <FaSpinner className="animate-spin" />
+              Registering...
+            </div>
+          ) : (
+            "Login"
+          )}
         </button>
 
         <p className="mt-4 text-center text-sm">

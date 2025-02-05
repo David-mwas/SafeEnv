@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { FaSpinner } from "react-icons/fa";
 
 function Register() {
   const [username, setUsername] = useState("");
@@ -98,7 +99,14 @@ function Register() {
           className="w-full mt-4 bg-green-600 py-2 rounded hover:bg-green-700 transition"
           disabled={loading}
         >
-          {loading ? "Registering..." : "Register"}
+          {loading ? (
+            <div className="flex items-center justify-center gap-2">
+              <FaSpinner className="animate-spin" />
+              Registering...
+            </div>
+          ) : (
+            "Register"
+          )}
         </button>
 
         <p className="mt-4 text-center text-sm">
