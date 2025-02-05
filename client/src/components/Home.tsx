@@ -10,6 +10,7 @@ import StroreKeysForm from "./StroreKeysForm";
 import TableData from "./TableData";
 import toast from "react-hot-toast";
 
+
 export type Key = {
   _id: string;
   key: string;
@@ -79,7 +80,6 @@ function Home() {
       toast.error("You never typed anything " + str);
       return;
     }
-  
 
     if (data?.toLocaleLowerCase() == str?.toLocaleLowerCase()) {
       deleteMutation.mutate(key);
@@ -109,7 +109,6 @@ function Home() {
         }
       );
 
-      
       // setRetrievedKeys(() => ({ [keyID]: res.data.value })); // Store retrieved value
       setRetrievedKeys((prev) => ({ ...prev, [keyID]: res.data.value }));
     } catch (error) {
@@ -153,18 +152,9 @@ function Home() {
   return (
     <div className="w-screen min-h-screen flex flex-col items-center p-6 bg-gray-900 text-white pt-[100px] ">
       <Header />
-      <b className="text-left text-2xl mb-8 animate-pulse w-full max-w-4xl">
+      <b className="text-center sm:text-left text-2xl mb-8 animate-pulse w-full max-w-4xl">
         Store your environment variables securely.
       </b>
-      <div className="flex w-full max-w-4xl justify-end ">
-        {/* Button to Open Modal */}
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-green-600 py-2 px-4 rounded hover:bg-green-700 transition mb-4"
-        >
-          Add New Key
-        </button>
-      </div>
 
       {/* Modal for Storing Key */}
       {isModalOpen && (
@@ -199,7 +189,6 @@ function Home() {
         animate={{ opacity: 1 }}
         className="w-full max-w-4xl"
       >
-        <h2 className="text-xl mb-2">Stored Variables</h2>
         <div className="overflow-x-auto overflow-y-auto">
           <TableData
             data={data}
@@ -215,6 +204,7 @@ function Home() {
             refetch={refetch}
             token={token}
             isLoadingKeys={isLoadingKeys}
+            setIsModalOpen={setIsModalOpen}
           />
         </div>
       </motion.div>

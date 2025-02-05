@@ -87,6 +87,8 @@ func main() {
 		auth.GET("/retrieve/:key", retrieveVariable)
 		auth.GET("/share/retrieve/:key", retrieveSharedVariable)
 		auth.POST("/share", shareVariable)
+		auth.POST("/store/bulk", storeVariablesBulk)
+
 	}
 
 	// r.GET("/api/v1/audit", auditLogs)
@@ -532,6 +534,50 @@ func shareVariable(c *gin.Context) {
 		"message": "Shareable link generated",
 		"link":    shareLink,
 	})
+}
+
+func storeVariablesBulk(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var request struct {
+		Variables map[string]string `json:"variables"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var documents []interface{}
+
+	for key, value := range request.Variables {
+		encryptedValue, err := encrypt(value)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Encryption failed",
+				"text": err,
+			})
+			return
+		}
+
+		documents = append(documents, bson.M{
+			"userID":    userID,
+			"key":       key,
+			"value":     encryptedValue,
+			"createdAt": time.Now(),
+		})
+	}
+
+	_, err := collection.InsertMany(context.TODO(), documents)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Variables stored successfully"})
 }
 
 // func auditLogs(c *gin.Context) {

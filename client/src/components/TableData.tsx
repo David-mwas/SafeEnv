@@ -8,6 +8,9 @@ import {
   FaTrash,
   FaDownload,
   FaSpinner,
+  FaPlusCircle,
+  FaUpload,
+  FaFile,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { convertDateTime } from "../../hooks/useDateTime";
@@ -35,6 +38,7 @@ interface TableDataProps {
   refetch: () => void;
   token: string | null;
   isLoadingKeys: boolean;
+  setIsModalOpen: (value: boolean) => void;
 }
 
 function TableData({
@@ -51,10 +55,12 @@ function TableData({
   refetch,
   token,
   isLoadingKeys,
+  setIsModalOpen,
 }: TableDataProps) {
   const [shareModalKey, setShareModalKey] = useState<string | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
 
   const toggleSelectKey = (key: string) => {
     setSelectedKeys((prev) =>
@@ -120,19 +126,122 @@ function TableData({
     setEditingKey(key);
     openEditModal();
   };
+  const uploadEnvFile = async (file: File) => {
+    if (!file) {
+      toast.error("No file selected.");
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      if (!text.trim()) {
+        throw new Error("File is empty or unreadable.");
+      }
+
+      const envVariables = parseEnvFile(text);
+      console.log("Parsed Env Variables:", envVariables);
+
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/store/bulk`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ Variables: envVariables }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to upload: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("Server Response:", data);
+      toast.success("File uploaded successfully!");
+      refetch();
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      toast.error(`Upload failed: ${error}`);
+    }
+  };
+
+  const parseEnvFile = (text: string) => {
+    const envVars: Record<string, string> = {};
+    text.split("\n").forEach((line) => {
+      const [key, value] = line.trim().split("=");
+      if (key && value) {
+        envVars[key.trim()] = value.trim();
+      }
+    });
+    console.log("Parsed Env Variables1:", envVars);
+    return envVars;
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+      setFile(e.target.files[0]);
+    }
+  };
 
   return (
     <div className="relative">
       <Toaster />
-      <div className="mt-4 mb-4">
+      <div className="mt-4 mb-4 flex flex-col-reverse gap-6 sm:gap-0 sm:grid  grid-cols-1 sm:grid-cols-2   p-2  w-full  max-w-4xl h-full sm:items-end">
         <button
           onClick={downloadEnvFile}
-          className="bg-green-500 text-white px-4 py-2 rounded transition hover:bg-green-600"
+          className="bg-green-500 text-white px-4 py-2 rounded transition hover:bg-green-600 w-[100%] sm:w-[250px] h-[50px]"
         >
           <FaDownload className="inline mr-1" />
           Download Selected Keys
         </button>
+
+        <div className="flex w-full  gap-4 items-end ">
+          {/* Button to Open Modal */}
+
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-blue-500 py-2 px-4 rounded hover:bg-blue-600 transition  w-[80%] sm:w-[250px] h-[50px]"
+          >
+            <FaPlusCircle className="inline mr-1" />
+            New Key
+          </button>
+          <div className="rounded-xl gap-2 w-[80%] sm:w-[250px] flex flex-col justify-end items-end pt-2 px-2 bg-slate-600">
+            <p>Upload key/s from a file(.txt,.env)</p>
+            <div className="flex flex-col items-center gap-2 w-full">
+              <label
+                htmlFor="file-upload"
+                className="flex items-center justify-between w-full h-[50px] border-2 border-gray-300 rounded-xl px-4 cursor-pointer bg-white hover:bg-gray-100 transition"
+              >
+                <span className="text-gray-600 w-full truncate">
+                  <FaFile className="inline mr-1" />
+                  {file ? file.name : "Choose file"}
+                </span>
+                {/* <button className="bg-blue-500 text-white px-3 py-1 rounded-lg text-sm">
+                  Browse
+                </button> */}
+              </label>
+              <input
+                id="file-upload"
+                type="file"
+                accept=".txt,.env"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </div>
+            <button
+              onClick={() => file && uploadEnvFile(file)}
+              disabled={!file}
+              className="w-full  mb-2 px-4 py-2 bg-blue-500 text-white rounded mt-2"
+            >
+              <FaUpload className="inline mr-1" />
+              Upload
+            </button>
+          </div>
+        </div>
       </div>
+      <h2 className="text-xl mb-2">Stored Variables</h2>
 
       <table className="w-full border-collapse border border-gray-700">
         <thead>
