@@ -39,11 +39,11 @@ func init() {
 	// }
 
 	// Load secrets
-	// encryptionKey := []byte(os.Getenv("SAFEENV_SECRET_KEY"))
+	encryptionKey := []byte(os.Getenv("SAFEENV_SECRET_KEY"))
 
-	// if len(encryptionKey) != 32 {
-	// 	log.Fatal("Encryption key must be exactly 32 bytes long")
-	// }
+	if len(encryptionKey) != 32 {
+		log.Fatal("Encryption key must be exactly 32 bytes long")
+	}
 
 	// Ensure SAFEENV_MONGO_URI exists
 	mongoURI := os.Getenv("SAFEENV_MONGO_URI")
@@ -426,7 +426,7 @@ func StoreVariable(c *gin.Context) {
 
 	encryptedValue, err := encrypt(data.Value)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Encryption failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
 	}
 
