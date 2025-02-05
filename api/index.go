@@ -26,32 +26,37 @@ func init() {
 	// }
 
 	// Load secrets
-	encryptionKey := []byte(os.Getenv("SAFEENV_SECRET_KEY"))
+	// encryptionKey := []byte(os.Getenv("SAFEENV_SECRET_KEY"))
 
-	if len(encryptionKey) != 32 {
-		log.Fatal("Encryption key must be exactly 32 bytes long")
-	}
+	// if len(encryptionKey) != 32 {
+	// 	log.Fatal("Encryption key must be exactly 32 bytes long")
+	// }
 
 	// Ensure SAFEENV_MONGO_URI exists
 	mongoURI := os.Getenv("SAFEENV_MONGO_URI")
 	if mongoURI == "" {
 		log.Fatal("SAFEENV_MONGO_URI environment variable is not set")
+		return
 	}
 
-	// Connect to MongoDB once at startup
-	clientOptions := options.Client().ApplyURI(os.Getenv("SAFEENV_MONGO_URI"))
-	client, err := mongo.Connect(context.TODO(), clientOptions)
+	// Connect to MongoDB
+	clientOptions := options.Client().ApplyURI(mongoURI)
+	client, err := mongo.Connect(context.Background(), clientOptions) // Assign to global `client`
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
-	collection = client.Database("safeenv").Collection("variables")
+
+	collection = client.Database("safeenv").Collection("variables") // Assign to global `collection`
+	if collection == nil {
+		log.Fatal("MongoDB collection is nil")
+	}
 	app = gin.New()
 	// Initialize Gin
 	// app = gin.Default()
 
 	// Apply CORS Middleware
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"https://safe-env.vercel.app"}, // Allow frontend requests
+		AllowOrigins:     []string{os.Getenv("SAFEENV_FRONTEND_URL")}, // Allow frontend requests
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		AllowCredentials: true,
