@@ -39,7 +39,8 @@ func init() {
 	// }
 
 	// Load secrets
-	encryptionKey := []byte(os.Getenv("SAFEENV_SECRET_KEY"))
+	encryptionKey = []byte(os.Getenv("SAFEENV_SECRET_KEY"))
+	jwtSecret = []byte(os.Getenv("SAFEENV_JWT_SECRET"))
 
 	if len(encryptionKey) != 32 {
 		log.Fatal("Encryption key must be exactly 32 bytes long")
