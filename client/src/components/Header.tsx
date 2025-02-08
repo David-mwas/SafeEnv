@@ -4,9 +4,9 @@ import { useNavigate } from "react-router-dom";
 import img from "/safeenv-high-resolution-logo-removebg-preview.png";
 import useAuthToken from "../../hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import { useState } from "react";
 import NavBar from "./NavBar";
+import toast from "react-hot-toast";
 
 function Header() {
   const [isOpen, setIsOpen] = useState(false);
@@ -19,15 +19,28 @@ function Header() {
     queryKey: ["envVars"],
     queryFn: async () => {
       if (!token) return { keys: [] };
-      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/user`, {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/user`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return res.data;
+      if (res.status == 401) {
+        toast.error("Session expired, please login again");
+        clearAuthToken();
+        window.location.href = "/login";
+        return;
+      }
+
+      if (res.status == 404) {
+        toast.error("No keys found, create one");
+        return { keys: [] };
+      }
+      if (res.ok) {
+        const data = await res.json();
+        return data;
+      }
     },
+
     enabled: !!token,
   });
-
-  console.log(data);
 
   const handleLogout = () => {
     clearAuthToken();

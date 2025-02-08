@@ -25,7 +25,6 @@ function Home() {
     {}
   );
 
-  const [data, setData] = useState<{ keys: Key[] }>({ keys: [] });
   const [shareableLinks, setShareableLinks] = useState<{
     [key: string]: string;
   }>({});
@@ -35,31 +34,34 @@ function Home() {
   const { token } = getItem() || { token: null };
 
   // Fetch stored keys
-  const { refetch, isLoading: isLoadingKeys } = useQuery({
+  const {
+    data,
+    refetch,
+    isLoading: isLoadingKeys,
+  } = useQuery({
     queryKey: ["user"],
     queryFn: async () => {
       if (!token) return { keys: [] };
-      const res = await axios
-        .get(`${import.meta.env.VITE_BACKEND_URL}/keys`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .then((res) => {
-          if (res.status === 401) {
-            toast.error("Session expired, please login again");
-            clearAuthToken();
-            window.location.href = "/login";
-            return;
-          }
-          if (res.status === 404) {
-            toast.error("No keys found");
-            return { keys: [] };
-          }
-          setData(res.data);
-          return res.data;
-        })
-        .catch((err) => console.error(err));
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/keys`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-      return res.data;
+      if (res.ok) {
+        const data = await res.json();
+
+        return data;
+      }
+      if (res.status == 401) {
+        toast.error("Session expired, please login again");
+        clearAuthToken();
+        window.location.href = "/login";
+        return;
+      }
+
+      if (res.status == 404) {
+        toast.error("No keys found, create one");
+        return { keys: [] };
+      }
     },
     enabled: !!token,
   });
