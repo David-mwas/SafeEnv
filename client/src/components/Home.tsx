@@ -10,7 +10,6 @@ import StroreKeysForm from "./StroreKeysForm";
 import TableData from "./TableData";
 import toast from "react-hot-toast";
 
-
 export type Key = {
   _id: string;
   key: string;
@@ -25,27 +24,42 @@ function Home() {
   const [retrievedKeys, setRetrievedKeys] = useState<{ [key: string]: string }>(
     {}
   );
+
+  const [data, setData] = useState<{ keys: Key[] }>({ keys: [] });
   const [shareableLinks, setShareableLinks] = useState<{
     [key: string]: string;
   }>({});
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  const { getItem } = useAuthToken();
+  const { getItem, clearAuthToken } = useAuthToken();
   const { token } = getItem() || { token: null };
 
   // Fetch stored keys
-  const {
-    data,
-    refetch,
-    isLoading: isLoadingKeys,
-  } = useQuery({
+  const { refetch, isLoading: isLoadingKeys } = useQuery({
     queryKey: ["user"],
     queryFn: async () => {
       if (!token) return { keys: [] };
-      const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/keys`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return res.data;
+      const res = await axios
+        .get(`${import.meta.env.VITE_BACKEND_URL}/keys`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => {
+          if (res.status === 401) {
+            toast.error("Session expired, please login again");
+            clearAuthToken();
+            window.location.href = "/login";
+            return;
+          }
+          if (res.status === 404) {
+            toast.error("No keys found");
+            return { keys: [] };
+          }
+          setData(res.data);
+          return res.data;
+        })
+        .catch((err) => console.error(err));
+
+      // return res.data;
     },
     enabled: !!token,
   });
