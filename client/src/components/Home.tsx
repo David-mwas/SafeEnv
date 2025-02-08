@@ -59,7 +59,7 @@ function Home() {
         })
         .catch((err) => console.error(err));
 
-      // return res.data;
+      return res.data;
     },
     enabled: !!token,
   });
