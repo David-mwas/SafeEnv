@@ -17,6 +17,7 @@ import { convertDateTime } from "../../hooks/useDateTime";
 import toast, { Toaster } from "react-hot-toast";
 import EditKeyForm from "./EditKeyForm";
 import { useState } from "react";
+import { HyperText } from "./magicui/hyper-text";
 
 interface Key {
   _id: string;
@@ -130,7 +131,7 @@ function TableData({
   };
   const uploadEnvFile = async (file: File) => {
     if (!file) {
-      toast.error("No file selected.");
+      toast.error("No file selected. Choose file to upload.");
       return;
     }
 
@@ -161,23 +162,47 @@ function TableData({
 
       const data = await response.json();
       console.log("Server Response:", data);
-      toast.success("File uploaded successfully!");
+      toast.success("Keys saved successfully!");
       refetch();
     } catch (error) {
       console.error("Error uploading file:", error);
       toast.error(`Upload failed: ${error}`);
+    }finally{
+      setFile(null);
     }
   };
 
+
   const parseEnvFile = (text: string) => {
     const envVars: Record<string, string> = {};
+  
     text.split("\n").forEach((line) => {
-      const [key, value] = line.trim().split("=");
-      if (key && value) {
-        envVars[key.trim()] = value.trim();
+      const trimmedLine = line.trim();
+  
+      // Ignore empty lines and comments
+      if (!trimmedLine || trimmedLine.startsWith("#")) {
+        return;
+      }
+  
+      // Split only at the first "=" to avoid issues with values containing "="
+      const separatorIndex = trimmedLine.indexOf("=");
+      if (separatorIndex === -1) {
+        return; // Ignore invalid lines without "="
+      }
+  
+      const key = trimmedLine.substring(0, separatorIndex).trim();
+      const value = trimmedLine.substring(separatorIndex + 1).trim();
+  
+      if(!key && !value){
+        toast.error("Invalid key value pair in the env");
+        return;
+      } 
+      if (key) {
+        envVars[key] = value;
       }
     });
-    console.log("Parsed Env Variables1:", envVars);
+  
+    console.log("Parsed Env Variables:", envVars);
     return envVars;
   };
 
@@ -210,32 +235,30 @@ function TableData({
             New Key
           </button>
           <div className="rounded-xl gap-2 w-[80%] sm:w-[250px] flex flex-col justify-end items-end pt-2 px-2 bg-slate-600">
-            <p>Upload key/s from a file(.txt,.env)</p>
+            <p>Upload key/s from a file(.txt,.env,.env.*)</p>
             <div className="flex flex-col items-center gap-2 w-full">
               <label
                 htmlFor="file-upload"
                 className="flex items-center justify-between w-full h-[50px] border-2 border-gray-300 rounded-xl px-4 cursor-pointer bg-white hover:bg-gray-100 transition"
               >
-                <span className="text-gray-600 w-full truncate">
+                <span className={`text-gray-600 w-full truncate ${!file && "text-gray-400"}`} >
                   <FaFile className="inline mr-1" />
                   {file ? file.name : "Choose file"}
                 </span>
-                {/* <button className="bg-blue-500 text-white px-3 py-1 rounded-lg text-sm">
-                  Browse
-                </button> */}
               </label>
               <input
                 id="file-upload"
                 type="file"
-                accept=".txt,.env"
+                accept=".txt,.env,.env.*"
                 onChange={handleFileChange}
-                className="hidden"
+                className={`hidden ${!file && "bg-gray-500"}`}
               />
             </div>
             <button
               onClick={() => file && uploadEnvFile(file)}
-              disabled={!file}
-              className="w-full  mb-2 px-4 py-2 bg-blue-500 text-white rounded mt-2"
+              // disabled={!file}
+              className={`w-full  mb-2 px-4 py-2 bg-blue-500 text-white rounded mt-2 ${
+                !file && "bg-gray-500"}`}
             >
               <FaUpload className="inline mr-1" />
               Upload
@@ -286,9 +309,15 @@ function TableData({
                     onChange={() => toggleSelectKey(envVar.key)}
                   />
                 </td>
-                <td className="border border-gray-700 p-2">{envVar.key}</td>
                 <td className="border border-gray-700 p-2">
+                  <HyperText className="text-base font-medium">
+                  {envVar.key}
+                  </HyperText>
+                </td>
+                <td className="border border-gray-700 p-2">
+                <HyperText className="text-base font-medium">
                   {convertDateTime(envVar.createdAt)}
+                  </HyperText>
                 </td>
                 <td className="border border-gray-700 p-2 flex items-center justify-center gap-2 relative">
                   {!retrievedKeys[envVar.key] && (

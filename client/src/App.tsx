@@ -7,6 +7,8 @@ import ShareKeyLogin from "./pages/ShareKeyLoginPage";
 import NotFound from "./components/NotFound";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Key from "./components/[key]";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPassword from "./pages/ResetPasswordPage";
 
 function App() {
   const queryClient = new QueryClient();
@@ -20,6 +22,8 @@ function App() {
           <Route path="/shareregister" element={<ShareKeyRegister />} />
           <Route path="/sharelogin" element={<ShareKeyLogin />} />
           <Route path="/share/retrieve/:key" element={<Key />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>

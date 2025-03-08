@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import { FaEye, FaEyeSlash, FaSpinner } from "react-icons/fa";
+import { FlipText } from "./magicui/flip-text";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -55,7 +56,7 @@ function Login() {
    }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white overflow-y-hidden">
       <Toaster />
       <motion.form
         className="bg-gray-800 p-6 rounded-xl shadow-lg w-96"
@@ -63,7 +64,11 @@ function Login() {
         animate={{ opacity: 1, scale: 1 }}
         onSubmit={(e) => handleLogin(e)}
       >
-        <h1 className="text-2xl font-bold text-center mb-4">Login</h1>
+     
+        <FlipText className="-tracking-widest dark:text-white md:text-7xl md:leading-[5rem] text-5xl font-bold text-center mb-4">
+      Login
+    </FlipText>
+     
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
         <label htmlFor="email" className="text-green-500 font-extrabold text-lg">Email *</label>
@@ -96,6 +101,11 @@ function Login() {
           {showPassword?<FaEye className="w-[20px] h-[20px]"/>:<FaEyeSlash className="w-[20px] h-[20px]"/>}
         </div>
         </div>
+
+        <p className="mt-4 text-sm self-end text-end underline p-2 cursor-pointer" onClick={() => navigate("/forgot-password")}>
+        Forgot Password?
+          
+        </p>
 
         <button
           type="submit"

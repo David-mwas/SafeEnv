@@ -9,6 +9,7 @@ import Header from "./Header";
 import StroreKeysForm from "./StroreKeysForm";
 import TableData from "./TableData";
 import toast from "react-hot-toast";
+import { SparklesText } from "./magicui/sparkles-text";
 
 export type Key = {
   _id: string;
@@ -173,8 +174,14 @@ function Home() {
   return (
     <div className="w-screen min-h-screen flex flex-col items-center p-6 bg-gray-900 text-white pt-[100px] ">
       <Header />
-      <b className="text-center sm:text-left text-2xl mb-8 animate-pulse w-full max-w-4xl">
-        Store your environment variables securely.
+    
+      <b className="w-full max-w-4xl ">
+      <SparklesText text="Store your environment variables securely." className="text-center sm:text-left text-3xl mb-8 animate-pulse w-full max-w-4xl font-extrabold" sparklesCount={10} colors={
+        {
+          first: "#4CAF50",
+          second: "#2196F3",
+        }
+      }/>
       </b>
 
       {/* Modal for Storing Key */}

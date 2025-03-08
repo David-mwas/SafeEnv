@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash, FaSpinner } from "react-icons/fa";
+import { FlipText } from "./magicui/flip-text";
 
 function Register() {
   const [username, setUsername] = useState("");
@@ -66,7 +67,11 @@ function Register() {
         animate={{ opacity: 1, scale: 1 }}
         onSubmit={(e) => handleRegister(e)}
       >
-        <h1 className="text-2xl font-bold text-center mb-4">Register</h1>
+        <h1 className="text-2xl font-bold text-center mb-4">
+          <FlipText className="-tracking-widest dark:text-white md:text-7xl md:leading-[5rem] text-5xl font-bold text-center mb-4">
+            Register
+          </FlipText>
+        </h1>
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
         <label htmlFor="password" className="text-green-500 font-extrabold text-lg">
             Username *
