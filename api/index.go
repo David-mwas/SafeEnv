@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"net/smtp"
 	"time"
 
 	"os"
@@ -317,12 +318,26 @@ func DeleteKey(c *gin.Context) {
 		return
 	}
 
-	key := c.Param("key")
+	keyID := c.Param("id") // Fetch _id from URL parameters
+	fmt.Println(keyID)
 
-	// Delete the key from the database
-	_, err := collection.DeleteOne(context.TODO(), bson.M{"key": key, "userID": userID})
+	// Convert keyID to ObjectID
+	objID, err := primitive.ObjectIDFromHex(keyID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid key ID format"})
+		return
+	}
+
+	// Delete the key by _id
+	result, err := collection.DeleteOne(context.TODO(), bson.M{"_id": objID, "userID": userID})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete key"})
+		return
+	}
+
+	// Check if any document was deleted
+	if result.DeletedCount == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Key not found"})
 		return
 	}
 
@@ -330,7 +345,7 @@ func DeleteKey(c *gin.Context) {
 	_, err = collection.Database().Collection("users").UpdateOne(
 		context.TODO(),
 		bson.M{"_id": userID},
-		bson.M{"$pull": bson.M{"keys": key}},
+		bson.M{"$pull": bson.M{"keys": objID}}, // Assuming keys array stores ObjectIDs
 	)
 
 	if err != nil {
@@ -577,6 +592,156 @@ func storeVariablesBulk(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Variables stored successfully"})
 }
 
+// send-reset-email
+func sendResetEmail(to, resetToken string) error {
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := os.Getenv("SMTP_PORT")
+	smtpEmail := os.Getenv("SMTP_EMAIL")
+	smtpPassword := os.Getenv("SMTP_PASSWORD")
+	frontendURL := os.Getenv("SAFEENV_FRONTEND_URL")
+
+	// Debugging logs
+	// fmt.Println("SMTP Configs:", smtpHost, smtpPort, smtpEmail)
+
+	if smtpHost == "" || smtpPort == "" || smtpEmail == "" || smtpPassword == "" || frontendURL == "" {
+		return fmt.Errorf("SMTP credentials are not set properly")
+	}
+
+	addr := fmt.Sprintf("%s:%s", smtpHost, smtpPort)
+	auth := smtp.PlainAuth("", smtpEmail, smtpPassword, smtpHost)
+
+	// Generate the reset link with the token
+	resetLink := fmt.Sprintf("%s/reset-password?token=%s", frontendURL, resetToken)
+
+	subject := "Password Reset Request"
+	body := fmt.Sprintf(
+		"Hello,\n\nClick the link below to reset your password:\n%s\n\nIf you didn't request this, please ignore it.The link will expire in 1 hour.\n\nThanks,\nSafeEnv",
+		resetLink,
+	)
+
+	msg := []byte("Subject: " + subject + "\r\n\r\n" + body)
+
+	err := smtp.SendMail(addr, auth, smtpEmail, []string{to}, msg)
+	if err != nil {
+		return fmt.Errorf("failed to send email: %v", err)
+	}
+	return nil
+}
+
+func requestPasswordReset(c *gin.Context) {
+	var request struct {
+		Email string `json:"email"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	// Check if user exists
+	var user struct {
+		ID    primitive.ObjectID `bson:"_id"`
+		Email string             `bson:"email"`
+	}
+	err := collection.Database().Collection("users").FindOne(context.TODO(), bson.M{"email": request.Email}).Decode(&user)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Generate reset token (JWT)
+	resetToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"email": user.Email,
+		"exp":   time.Now().Add(time.Hour * 1).Unix(), // Expires in 1 hour
+	})
+	tokenString, err := resetToken.SignedString(jwtSecret)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	// Store token in DB (optional)
+	_, err = collection.Database().Collection("password_resets").InsertOne(context.TODO(), bson.M{
+		"email":     user.Email,
+		"token":     tokenString,
+		"createdAt": time.Now(),
+		"expiresAt": time.Now().Add(time.Hour),
+		"used":      false,
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store reset token"})
+		return
+	}
+
+	// Send Reset Email
+	err = sendResetEmail(user.Email, tokenString)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send email" + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password reset email sent!"})
+}
+
+func resetPassword(c *gin.Context) {
+	var request struct {
+		Token       string `json:"token"`
+		NewPassword string `json:"newPassword"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	// Parse the token
+	token, err := jwt.Parse(request.Token, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
+	})
+
+	if err != nil || !token.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+		return
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+		return
+	}
+
+	email, ok := claims["email"].(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email in token"})
+		return
+	}
+
+	// Hash the new password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
+
+	// Update the user's password
+	_, err = collection.Database().Collection("users").UpdateOne(
+		context.TODO(),
+		bson.M{"email": email},
+		bson.M{"$set": bson.M{"passwordHash": string(hashedPassword)}},
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
+		return
+	}
+
+	// Invalidate the reset token
+	collection.Database().Collection("password_resets").DeleteOne(context.TODO(), bson.M{"email": email})
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully!"})
+}
+
 func Register(app *gin.Engine) {
 
 	app.Use(cors.New(cors.Config{
@@ -592,6 +757,10 @@ func Register(app *gin.Engine) {
 	})
 	app.POST("/api/v1/register", RegisterUser)
 	app.POST("/api/v1/login", LoginUser)
+
+	// Password reset routes
+	app.POST("/api/v1/forgot-password", requestPasswordReset)
+	app.POST("/api/v1/reset-password", resetPassword)
 
 	// Protected Routes
 	auth := app.Group("/api/v1")
