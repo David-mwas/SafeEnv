@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { FaSpinner } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaSpinner } from "react-icons/fa";
 
 function Register() {
   const [username, setUsername] = useState("");
@@ -9,6 +9,8 @@ function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showCPassword, setShowCPassword] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
@@ -49,6 +51,13 @@ function Register() {
     }
   };
 
+  const toogleEye = () => {
+        setShowPassword(!showPassword);
+       }
+  const toogleCEye = () => {
+        setShowCPassword(!showCPassword);
+       }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
       <motion.form
@@ -59,15 +68,20 @@ function Register() {
       >
         <h1 className="text-2xl font-bold text-center mb-4">Register</h1>
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-
+        <label htmlFor="password" className="text-green-500 font-extrabold text-lg">
+            Username *
+          </label>
         <input
           type="text"
           placeholder="Username"
           required
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="w-full p-2 mt-6 text-white rounded placeholder:text-white border "
+          className="w-full p-2 mb-6 text-white rounded placeholder:text-white border "
         />
+        <label htmlFor="password" className="text-green-500 font-extrabold text-lg">
+            Email *
+          </label>
 
         <input
           type="email"
@@ -75,25 +89,44 @@ function Register() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-2 mt-6 text-white rounded placeholder:text-white border  "
+          className="w-full p-2 mb-6 text-white rounded placeholder:text-white border  "
         />
 
-        <input
-          type="password"
-          placeholder="Password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 mt-6 text-white rounded placeholder:text-white border "
-        />
-        <input
-          type="password"
-          placeholder="Confirm Password"
-          required
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          className="w-full p-2 mt-6 text-white rounded placeholder:text-white border "
-        />
+<label htmlFor="password" className="text-green-500 font-extrabold text-lg">
+            Password *
+          </label>
+        <div className="w-full flex items-center justify-between border rounded mb-6 ">
+          
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full  text-white  placeholder:text-white p-2 outline-0 border-none "
+          />
+             <div className="p-2" onClick={toogleEye}> 
+                    {showPassword?<FaEye className="w-[20px] h-[20px]"/>:<FaEyeSlash className="w-[20px] h-[20px]"/>}
+                  </div>
+        </div>
+
+        <label htmlFor="password" className="text-green-500 font-extrabold text-lg">
+           Confirm Password *
+          </label>
+
+       <div className="w-full flex items-center justify-between border rounded mb-6 ">
+          <input
+            type={showCPassword ? "text" : "password"}
+            placeholder="Confirm Password"
+            required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className="w-full  text-white  placeholder:text-white p-2 outline-0 border-none "
+          />
+          <div className="p-2" onClick={toogleCEye}> 
+                    {showCPassword?<FaEye className="w-[20px] h-[20px]"/>:<FaEyeSlash className="w-[20px] h-[20px]"/>}
+                  </div>
+       </div>
 
         <button
           className="w-full mt-4 bg-green-600 py-2 rounded hover:bg-green-700 transition"

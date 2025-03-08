@@ -3,12 +3,13 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
-import { FaSpinner } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaSpinner } from "react-icons/fa";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
@@ -36,6 +37,10 @@ function Login() {
         localStorage.setItem("safeEnv", res.data.token);
         window.location.href = "/";
       }
+      if (res.status == 401) {
+        toast.error("Unauthorized, Invalid Email or password");
+        setError("Unauthorized, Invalid Email or password");
+      }
     } catch (err) {
       setError("Invalid Email or password " + err);
     } finally {
@@ -44,6 +49,10 @@ function Login() {
       setPassword("");
     }
   };
+
+  const toogleEye = () => {
+    setShowPassword(!showPassword);
+   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
@@ -57,23 +66,36 @@ function Login() {
         <h1 className="text-2xl font-bold text-center mb-4">Login</h1>
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
-        <input
+        <label htmlFor="email" className="text-green-500 font-extrabold text-lg">Email *</label>
+       <div className="w-full flex items-center justify-between border rounded mb-6">
+       <input
           type="email"
+          id="email"
+          name="email"
           placeholder="Email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-2 mt-6 text-white rounded placeholder:text-white border"
+          className="w-full  text-white  placeholder:text-white p-2 outline-0 border-none"
         />
-
+       
+       </div>
+       
+       <label htmlFor="password" className="text-green-500 font-extrabold text-lg">Password *</label>
+        <div className="w-full flex items-center justify-between border  rounded">
         <input
-          type="password"
+          type={showPassword ? "text" : "password"}
+          id="password"
           placeholder="Password"
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 mt-6 text-white rounded placeholder:text-white border"
+          className="w-full  text-white  placeholder:text-white p-2 outline-0 border-none"
         />
+        <div className="p-2" onClick={toogleEye}> 
+          {showPassword?<FaEye className="w-[20px] h-[20px]"/>:<FaEyeSlash className="w-[20px] h-[20px]"/>}
+        </div>
+        </div>
 
         <button
           type="submit"
