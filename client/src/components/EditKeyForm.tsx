@@ -12,8 +12,6 @@ interface StroreKeysFormProps {
 }
 
 function StroreKeysForm({ k, v, token, refetch,setIstEditModalOpen }: StroreKeysFormProps) {
-  const [envkey, setKey] = useState("");
-  const [value, setValue] = useState("");
   const [newKey, setNewKey] = useState(k);
   const [newValue, setNewValue] = useState(v);
 
@@ -34,8 +32,8 @@ function StroreKeysForm({ k, v, token, refetch,setIstEditModalOpen }: StroreKeys
     e.preventDefault();
     if (!newKey || !newValue) return;
     mutation.mutate({ NewKey: newKey, NewValue: newValue });
-    setKey("");
-    setValue("");
+    setNewKey("");
+    setNewValue("");
     setIstEditModalOpen(false);
   };
 
