@@ -8,11 +8,14 @@ interface StroreKeysFormProps {
   k: string;
   token: string | null;
   refetch: () => void;
+  setIstEditModalOpen: (value: boolean) => void;
 }
 
-function StroreKeysForm({ k, v, token, refetch }: StroreKeysFormProps) {
+function StroreKeysForm({ k, v, token, refetch,setIstEditModalOpen }: StroreKeysFormProps) {
   const [envkey, setKey] = useState("");
   const [value, setValue] = useState("");
+  const [newKey, setNewKey] = useState(k);
+  const [newValue, setNewValue] = useState(v);
 
   const mutation = useMutation({
     mutationFn: async (newVar: { NewKey: string; NewValue: string }) => {
@@ -29,10 +32,11 @@ function StroreKeysForm({ k, v, token, refetch }: StroreKeysFormProps) {
   // Handle form submission
   const handleStore = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!envkey || !value) return;
-    mutation.mutate({ NewKey: envkey, NewValue: value });
+    if (!newKey || !newValue) return;
+    mutation.mutate({ NewKey: newKey, NewValue: newValue });
     setKey("");
     setValue("");
+    setIstEditModalOpen(false);
   };
 
   return (
@@ -40,15 +44,15 @@ function StroreKeysForm({ k, v, token, refetch }: StroreKeysFormProps) {
       <form onSubmit={(e) => handleStore(e)} className="space-y-4 ">
         <input
           required
-          value={envkey}
-          onChange={(e) => setKey(e.target.value)}
+          value={newKey}
+          onChange={(e) => setNewKey(e.target.value)}
           placeholder={k}
           className="w-full p-2 text-white rounded placeholder:text-white border bg-gray-700"
         />
         <input
           required
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
+          value={newValue}
+          onChange={(e) => setNewValue(e.target.value)}
           placeholder={v}
           className="w-full p-2 text-white rounded placeholder:text-white border bg-gray-700"
         />

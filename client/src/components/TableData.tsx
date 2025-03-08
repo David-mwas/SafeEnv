@@ -39,6 +39,7 @@ interface TableDataProps {
   token: string | null;
   isLoadingKeys: boolean;
   setIsModalOpen: (value: boolean) => void;
+  setIstEditModalOpen: (value: boolean) => void;
 }
 
 function TableData({
@@ -56,6 +57,7 @@ function TableData({
   token,
   isLoadingKeys,
   setIsModalOpen,
+  setIstEditModalOpen
 }: TableDataProps) {
   const [shareModalKey, setShareModalKey] = useState<string | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
@@ -320,6 +322,7 @@ function TableData({
                         >
                           <h2 className="text-xl mb-2">Edit a Key</h2>
                           <EditKeyForm
+                        setIstEditModalOpen={setIstEditModalOpen}
                             token={token}
                             refetch={refetch}
                             k={envVar.key} // Pass the key here

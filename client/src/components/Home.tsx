@@ -21,6 +21,9 @@ export type Key = {
 function Home() {
   const [envkey, setKey] = useState("");
   const [value, setValue] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIstEditModalOpen] = useState(false); 
+
   const [retrievedKeys, setRetrievedKeys] = useState<{ [key: string]: string }>(
     {}
   );
@@ -89,7 +92,7 @@ function Home() {
 
   const handleDeleteKey = (key: string) => {
     const data = prompt(
-      "To delete key " + key + " Type I want to delete key " + key
+      "To delete key " + key + " Type: I want to delete key " + key
     );
     const str = "I want to delete key " + key;
     if (!data) {
@@ -112,6 +115,7 @@ function Home() {
     mutation.mutate({ key: envkey, value });
     setKey("");
     setValue("");
+    setIsModalOpen(false);
   };
 
   // Retrieve decrypted key from backend
@@ -159,8 +163,7 @@ function Home() {
     }
   };
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditModalOpen, setIstEditModalOpen] = useState(false);
+
   const openEditModal = () => {
     setIstEditModalOpen(!isEditModalOpen);
   };
@@ -216,6 +219,7 @@ function Home() {
             shareKey={shareKey}
             handleDeleteKey={handleDeleteKey}
             isEditModalOpen={isEditModalOpen}
+            setIstEditModalOpen={setIstEditModalOpen}
             openEditModal={openEditModal}
             refetch={refetch}
             token={token}
