@@ -5,7 +5,6 @@ function HomePage() {
   const { getItem } = Auth();
   const item = getItem();
   const token = item ? item.token : null;
-  console.log(token);
   return <>{token ? <Home /> : <Login />}</>;
 }
 

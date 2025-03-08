@@ -69,6 +69,8 @@ function Home() {
     enabled: !!token,
   });
 
+  // console.log(data?.keys[0]?._id);
+
   // Store new key
   const mutation = useMutation({
     mutationFn: async (newVar: { key: string; value: string }) => {
@@ -90,7 +92,7 @@ function Home() {
     },
   });
 
-  const handleDeleteKey = (key: string) => {
+  const handleDeleteKey = (id:string,key: string) => {
     const data = prompt(
       "To delete key " + key + " Type: I want to delete key " + key
     );
@@ -101,7 +103,7 @@ function Home() {
     }
 
     if (data?.toLocaleLowerCase() == str?.toLocaleLowerCase()) {
-      deleteMutation.mutate(key);
+      deleteMutation.mutate(id);
     } else {
       toast.error("Wrong!! " + str);
       return;

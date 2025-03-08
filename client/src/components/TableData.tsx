@@ -32,7 +32,7 @@ interface TableDataProps {
   copiedKey: string | null;
   shareableLinks: { [key: string]: string };
   shareKey: (key: string) => void;
-  handleDeleteKey: (key: string) => void;
+  handleDeleteKey: (id:string,key: string) => void;
   isEditModalOpen: boolean;
   openEditModal: () => void;
   refetch: () => void;
@@ -404,7 +404,7 @@ function TableData({
                       </div>
                     )}
                   <button
-                    onClick={() => handleDeleteKey(envVar.key)}
+                    onClick={() => handleDeleteKey(envVar._id, envVar.key)}
                     className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
                   >
                     <FaTrash className="inline mr-1" />
