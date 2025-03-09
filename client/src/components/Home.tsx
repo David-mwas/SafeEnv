@@ -43,7 +43,7 @@ function Home() {
     refetch,
     isLoading: isLoadingKeys,
   } = useQuery({
-    queryKey: ["user"],
+    queryKey: ["key"],
     queryFn: async () => {
       if (!token) return { keys: [] };
       const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/keys`, {
@@ -172,17 +172,31 @@ function Home() {
   };
 
   return (
-    <div className="w-screen min-h-screen flex flex-col items-center p-6 bg-gray-900 text-white pt-[100px] ">
+    <div className="w-screen  flex flex-col items-center p-6 bg-gray-900 text-white pt-[100px] pb-[30px]">
       <Header />
     
       <b className="w-full max-w-4xl ">
-      <SparklesText text="Store your environment variables securely." className="text-center sm:text-left text-3xl mb-8 animate-pulse w-full max-w-4xl font-extrabold" sparklesCount={10} colors={
+      <SparklesText text="Store your environment variables securely." className="text-left text-3xl mb-8 animate-pulse w-full max-w-4xl font-extrabold" sparklesCount={10} colors={
         {
           first: "#4CAF50",
           second: "#2196F3",
         }
       }/>
       </b>
+
+      {/* star us on github */}
+      <div className="w-full max-w-4xl flex  gap-2">
+      <p className="text-base mb-4 text-gray-200">
+       Star on GitHub
+      </p>
+        <a
+          href="https://github.com/David-mwas/SafeEnv">
+          <img
+            src="https://img.shields.io/github/stars/David-mwas/SafeEnv?style=social"
+            alt="Star on GitHub"/>
+          </a>
+      </div>
+
 
       {/* Modal for Storing Key */}
       {isModalOpen && (
@@ -237,6 +251,7 @@ function Home() {
           />
         </div>
       </motion.div>
+     
     </div>
   );
 }

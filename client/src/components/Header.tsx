@@ -48,7 +48,7 @@ function Header() {
   };
 
   return (
-    <header className="w-full flex items-center justify-between bg-gray-800 px-6 py-4 shadow-md h-[80px] mb-8 fixed top-0 z-50  ">
+    <header className="w-screen flex items-center justify-between bg-gray-800 px-6 py-4 shadow-md h-[80px] mb-8 fixed top-0 z-50  ">
       {/* Logo */}
       <motion.img
         src={img}
@@ -57,7 +57,7 @@ function Header() {
         initial={{ y: -10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
       />
-      {/* <div>
+      {/* <div className="flex items-center gap-4 text-white">
         <span>
           <FaMoon />
         </span>

@@ -215,7 +215,7 @@ function TableData({
   return (
     <div className="relative">
       <Toaster />
-      <div className="mt-4 mb-4 flex flex-col-reverse gap-6 sm:gap-0 sm:grid  grid-cols-1 sm:grid-cols-2   p-2  w-full  max-w-4xl h-full sm:items-end">
+      <div className="mt-4 mb-4 flex flex-col-reverse gap-6 sm:gap-0 sm:grid  grid-cols-1 sm:grid-cols-2   p-2  w-full  max-w-4xl h-full sm:items-end ">
         <button
           onClick={downloadEnvFile}
           className="bg-green-500 text-white px-4 py-2 rounded transition hover:bg-green-600 w-[100%] sm:w-[250px] h-[50px]"
@@ -268,7 +268,7 @@ function TableData({
       </div>
       <h2 className="text-xl mb-2">Stored Variables</h2>
 
-      <table className="w-full border-collapse border border-gray-700">
+      <table className="w-full border-collapse border border-gray-700 ">
         <thead>
           <tr className="bg-gray-800 text-white">
             <th className="border border-gray-700 p-2 flex items-center justify-center flex-col">
@@ -310,9 +310,8 @@ function TableData({
                   />
                 </td>
                 <td className="border border-gray-700 p-2">
-                  <HyperText className="text-base font-medium">
-                  {envVar.key}
-                  </HyperText>
+                <p className="text-base">  {envVar.key}</p>
+                 
                 </td>
                 <td className="border border-gray-700 p-2">
                 <HyperText className="text-base font-medium">

@@ -22,8 +22,9 @@ function StroreKeysForm({ k, v, token, refetch,setIstEditModalOpen }: StroreKeys
       });
     },
     onSuccess: () => {
-      refetch();
+    
       toast.success("Key updated successfully");
+      refetch();
     },
   });
 
