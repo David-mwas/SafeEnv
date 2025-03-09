@@ -186,15 +186,19 @@ function Home() {
 
       {/* star us on github */}
       <div className="w-full max-w-4xl flex  gap-2">
-      <p className="text-base mb-4 text-gray-200">
+      <a
+      target="_blank"
+      rel="noreferrer"
+          href="https://github.com/David-mwas/SafeEnv" className="flex items-center gap-2 bg-gray-800 p-2 rounded-lg hover:bg-gray-700 transition justify-center">
+      <p className="text-base  text-gray-200">
        Star on GitHub
       </p>
-        <a
-          href="https://github.com/David-mwas/SafeEnv">
+       
           <img
             src="https://img.shields.io/github/stars/David-mwas/SafeEnv?style=social"
             alt="Star on GitHub"/>
-          </a>
+            </a>
+        
       </div>
 
 
