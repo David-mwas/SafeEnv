@@ -342,6 +342,7 @@ func deleteKey(c *gin.Context) {
 
 	// Convert keyID to ObjectID
 	objID, err := primitive.ObjectIDFromHex(keyID)
+	
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid key ID format"})
 		return
@@ -361,11 +362,11 @@ func deleteKey(c *gin.Context) {
 	}
 
 	// Remove key from user's keys list
-	_, err = collection.Database().Collection("users").UpdateOne(
-		context.TODO(),
-		bson.M{"_id": userID},
-		bson.M{"$pull": bson.M{"keys": objID}}, // Assuming keys array stores ObjectIDs
-	)
+	// _, err = collection.Database().Collection("users").UpdateOne(
+	// 	context.TODO(),
+	// 	bson.M{"_id": userID},
+	// 	bson.M{"$pull": bson.M{"keys": objID}}, // Assuming keys array stores ObjectIDs
+	// )
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user data"})

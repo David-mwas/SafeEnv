@@ -318,26 +318,20 @@ func DeleteKey(c *gin.Context) {
 		return
 	}
 
-
-	// Convert userID from string to ObjectID
-	objectID, err := primitive.ObjectIDFromHex(userID.(string))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-
 	keyID := c.Param("id") // Fetch _id from URL parameters
 	fmt.Println(keyID)
 
 	// Convert keyID to ObjectID
 	objID, err := primitive.ObjectIDFromHex(keyID)
+	fmt.Println("objID", objID)
+	// fmt.Println("keyID", keyID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid key ID format"})
 		return
 	}
 
 	// Delete the key by _id
-	result, err := collection.DeleteOne(context.TODO(), bson.M{"_id": objID, "userID":objectID})
+	result, err := collection.DeleteOne(context.TODO(), bson.M{"_id": objID, "userID": userID})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete key"})
 		return
@@ -350,11 +344,11 @@ func DeleteKey(c *gin.Context) {
 	}
 
 	// Remove key from user's keys list
-	_, err = collection.Database().Collection("users").UpdateOne(
-		context.TODO(),
-		bson.M{"_id": userID},
-		bson.M{"$pull": bson.M{"keys": objID}}, // Assuming keys array stores ObjectIDs
-	)
+	// _, err = collection.Database().Collection("users").UpdateOne(
+	// 	context.TODO(),
+	// 	bson.M{"_id": userID},
+	// 	bson.M{"$pull": bson.M{"keys": objID}}, // Assuming keys array stores ObjectIDs
+	// )
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user data"})
@@ -363,7 +357,6 @@ func DeleteKey(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Key deleted successfully"})
 }
-
 // Update a Key’s Value
 func UpdateKey(c *gin.Context) {
 	userID, exists := c.Get("userID")

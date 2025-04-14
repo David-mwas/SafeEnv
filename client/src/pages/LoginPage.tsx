@@ -17,7 +17,7 @@ function LoginPage() {
 
   return (
     <>
-      <>{token! ? <Home /> : <Login />}</>;
+      <>{token! ? <Home /> : <Login />}</>
     </>
   );
 }

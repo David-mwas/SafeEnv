@@ -99,7 +99,8 @@ function Home() {
         const data = await res.json();
         console.log("Data", data);
 
-        if (res.ok) {
+        if (res.status == 200) {
+          refetch();
           toast.success("Key deleted successfully");
           return;
         }
