@@ -337,7 +337,7 @@ func deleteKey(c *gin.Context) {
 		return
 	}
 
-	keyID := c.Param("id") // Fetch _id from URL parameters
+	keyID := c.Param("key") // Fetch _id from URL parameters
 	fmt.Println(keyID)
 
 	// Convert keyID to ObjectID
