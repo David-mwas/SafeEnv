@@ -94,16 +94,16 @@ function Home() {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-        console.log("Key", key);
-        console.log("Res", res);
-        const data = await res.json();
-        console.log("Data", data);
+        // console.log("Key", key);
+        // console.log("Res", res);
+        // const data = await res.json();
+        // console.log("Data", data);
 
-        if (res.status == 200) {
-          refetch();
-          toast.success("Key deleted successfully");
-          return;
-        }
+        // if (res.status == 200) {
+        //   refetch();
+        //   toast.success("Key deleted successfully");
+        //   return;
+        // }
         if (res.status == 401) {
           toast.error("Session expired, please login again");
           clearAuthToken();
