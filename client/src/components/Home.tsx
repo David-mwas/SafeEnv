@@ -99,11 +99,11 @@ function Home() {
         // const data = await res.json();
         // console.log("Data", data);
 
-        // if (res.status == 200) {
-        //   refetch();
-        //   toast.success("Key deleted successfully");
-        //   return;
-        // }
+        if (res.status == 200) {
+          refetch();
+          toast.success("Key deleted successfully");
+          return;
+        }
         if (res.status == 401) {
           toast.error("Session expired, please login again");
           clearAuthToken();
@@ -125,14 +125,14 @@ function Home() {
         toast.error("Error deleting key : " + error);
       }
     },
-    onSuccess: () => {
-      refetch();
-      toast.success("Key deleted successfully");
-    },
-    onError: (error) => {
-      console.error("Error deleting key:", error);
-      toast.error("Error deleting key : " + error);
-    },
+    // onSuccess: () => {
+    //   refetch();
+    //   toast.success("Key deleted successfully");
+    // },
+    // onError: (error) => {
+    //   console.error("Error deleting key:", error);
+    //   toast.error("Error deleting key : " + error);
+    // },
   });
 
   const handleDeleteKey = (id: string, key: string) => {
