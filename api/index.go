@@ -322,16 +322,16 @@ func DeleteKey(c *gin.Context) {
 	fmt.Println(keyID)
 
 	// Convert keyID to ObjectID
-	objID, err := primitive.ObjectIDFromHex(keyID)
-	fmt.Println("objID", objID)
-	// fmt.Println("keyID", keyID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid key ID format"})
-		return
-	}
+	// objID, err := primitive.ObjectIDFromHex(keyID)
+	// fmt.Println("objID", objID)
+	// // fmt.Println("keyID", keyID)
+	// if err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid key ID format"})
+	// 	return
+	// }
 
 	// Delete the key by _id
-	result, err := collection.DeleteOne(context.TODO(), bson.M{"_id": objID, "userID": userID})
+	result, err := collection.DeleteOne(context.TODO(), bson.M{"_id": keyID, "userID": userID})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete key"})
 		return
