@@ -52,8 +52,14 @@ func main() {
 		log.Fatal("Encryption key must be exactly 32 bytes long not: ", len(encryptionKey))
 
 	}
+	// Ensure SAFEENV_MONGO_URI exists
+	mongoURI := os.Getenv("SAFEENV_MONGODB_URI")
+	if mongoURI == "" {
+		log.Fatal("SAFEENV_MONGO_URI environment variable is not set")
+		return
+	}
 
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+	clientOptions := options.Client().ApplyURI(mongoURI)
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
 		log.Fatal(err)
@@ -323,6 +329,7 @@ func getCurrentUser(c *gin.Context) {
 }
 
 // Delete a Key->new way
+// Delete a Key
 func deleteKey(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
@@ -367,6 +374,50 @@ func deleteKey(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Key deleted successfully"})
 }
+// func deleteKey(c *gin.Context) {
+// 	userID, exists := c.Get("userID")
+// 	if !exists {
+// 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+// 		return
+// 	}
+
+// 	keyID := c.Param("id") // Fetch _id from URL parameters
+// 	fmt.Println(keyID)
+
+// 	// Convert keyID to ObjectID
+// 	objID, err := primitive.ObjectIDFromHex(keyID)
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid key ID format"})
+// 		return
+// 	}
+
+// 	// Delete the key by _id
+// 	result, err := collection.DeleteOne(context.TODO(), bson.M{"_id": objID, "userID": userID})
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete key"})
+// 		return
+// 	}
+
+// 	// Check if any document was deleted
+// 	if result.DeletedCount == 0 {
+// 		c.JSON(http.StatusNotFound, gin.H{"error": "Key not found"})
+// 		return
+// 	}
+
+// 	// Remove key from user's keys list
+// 	_, err = collection.Database().Collection("users").UpdateOne(
+// 		context.TODO(),
+// 		bson.M{"_id": userID},
+// 		bson.M{"$pull": bson.M{"keys": objID}}, // Assuming keys array stores ObjectIDs
+// 	)
+
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user data"})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, gin.H{"message": "Key deleted successfully"})
+// }
 
 // Update a Key’s Value
 func updateKey(c *gin.Context) {
