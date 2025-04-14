@@ -299,14 +299,14 @@ function TableData({
           {data?.keys?.length ? (
             data.keys.map((envVar: Key) => (
               <tr
-                key={envVar._id}
+                key={envVar?._id}
                 className="text-center bg-gray-800 hover:bg-gray-700"
               >
                 <td className="border border-gray-700 p-2">
                   <input
                     type="checkbox"
-                    checked={selectedKeys.includes(envVar.key)}
-                    onChange={() => toggleSelectKey(envVar.key)}
+                    checked={selectedKeys.includes(envVar?.key)}
+                    onChange={() => toggleSelectKey(envVar?.key)}
                   />
                 </td>
                 <td className="border border-gray-700 p-2">
@@ -432,7 +432,7 @@ function TableData({
                       </div>
                     )}
                   <button
-                    onClick={() => handleDeleteKey(envVar._id, envVar.key)}
+                    onClick={() => handleDeleteKey(envVar?._id, envVar?.key)}
                     className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
                   >
                     <FaTrash className="inline mr-1" />

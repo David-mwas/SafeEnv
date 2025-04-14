@@ -94,6 +94,7 @@ function Home() {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
+        console.log("Key", key);
         console.log("Res", res);
         const data = await res.json();
         console.log("Data", data);
