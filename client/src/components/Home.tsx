@@ -23,7 +23,7 @@ function Home() {
   const [envkey, setKey] = useState("");
   const [value, setValue] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditModalOpen, setIstEditModalOpen] = useState(false); 
+  const [isEditModalOpen, setIstEditModalOpen] = useState(false);
 
   const [retrievedKeys, setRetrievedKeys] = useState<{ [key: string]: string }>(
     {}
@@ -83,17 +83,57 @@ function Home() {
   });
   const deleteMutation = useMutation({
     mutationFn: async (key: string) => {
-      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/keys/${key}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // use fetch instead of axios
+      if (!token) return;
+
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/keys/${key}`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        console.log("Res", res);
+        const data = await res.json();
+        console.log("Data", data);
+
+        if (res.ok) {
+          toast.success("Key deleted successfully");
+          return;
+        }
+        if (res.status == 401) {
+          toast.error("Session expired, please login again");
+          clearAuthToken();
+          window.location.href = "/login";
+          return;
+        }
+        if (res.status == 404) {
+          toast.error("Key not found");
+          return;
+        }
+        if (res.status == 400) {
+          toast.error("Server error, please try again later");
+          const data = await res.json();
+          console.error(data);
+          return;
+        }
+      } catch (error) {
+        console.error("Error deleting key:", error);
+        toast.error("Error deleting key : " + error);
+      }
     },
     onSuccess: () => {
       refetch();
       toast.success("Key deleted successfully");
     },
+    onError: (error) => {
+      console.error("Error deleting key:", error);
+      toast.error("Error deleting key : " + error);
+    },
   });
 
-  const handleDeleteKey = (id:string,key: string) => {
+  const handleDeleteKey = (id: string, key: string) => {
     const data = prompt(
       "To delete key " + key + " Type: I want to delete key " + key
     );
@@ -166,7 +206,6 @@ function Home() {
     }
   };
 
-
   const openEditModal = () => {
     setIstEditModalOpen(!isEditModalOpen);
   };
@@ -174,33 +213,35 @@ function Home() {
   return (
     <div className="w-screen  flex flex-col items-center p-6 bg-gray-900 text-white pt-[100px] pb-[30px]">
       <Header />
-    
+
       <b className="w-full max-w-4xl ">
-      <SparklesText text="Store your environment variables securely." className="text-left text-3xl mb-8 animate-pulse w-full max-w-4xl font-extrabold" sparklesCount={10} colors={
-        {
-          first: "#4CAF50",
-          second: "#2196F3",
-        }
-      }/>
+        <SparklesText
+          text="Store your environment variables securely."
+          className="text-left text-3xl mb-8 animate-pulse w-full max-w-4xl font-extrabold"
+          sparklesCount={10}
+          colors={{
+            first: "#4CAF50",
+            second: "#2196F3",
+          }}
+        />
       </b>
 
       {/* star us on github */}
       <div className="w-full max-w-4xl flex  gap-2">
-      <a
-      target="_blank"
-      rel="noreferrer"
-          href="https://github.com/David-mwas/SafeEnv" className="flex items-center gap-2 bg-gray-800 p-2 rounded-lg hover:bg-gray-700 transition justify-center">
-      <p className="text-base  text-gray-200">
-       Star on GitHub
-      </p>
-       
+        <a
+          target="_blank"
+          rel="noreferrer"
+          href="https://github.com/David-mwas/SafeEnv"
+          className="flex items-center gap-2 bg-gray-800 p-2 rounded-lg hover:bg-gray-700 transition justify-center"
+        >
+          <p className="text-base  text-gray-200">Star on GitHub</p>
+
           <img
             src="https://img.shields.io/github/stars/David-mwas/SafeEnv?style=social"
-            alt="Star on GitHub"/>
-            </a>
-        
+            alt="Star on GitHub"
+          />
+        </a>
       </div>
-
 
       {/* Modal for Storing Key */}
       {isModalOpen && (
@@ -255,7 +296,6 @@ function Home() {
           />
         </div>
       </motion.div>
-     
     </div>
   );
 }
