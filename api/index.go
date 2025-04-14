@@ -318,6 +318,14 @@ func DeleteKey(c *gin.Context) {
 		return
 	}
 
+
+	// Convert userID from string to ObjectID
+	objectID, err := primitive.ObjectIDFromHex(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
 	keyID := c.Param("id") // Fetch _id from URL parameters
 	fmt.Println(keyID)
 
@@ -329,7 +337,7 @@ func DeleteKey(c *gin.Context) {
 	}
 
 	// Delete the key by _id
-	result, err := collection.DeleteOne(context.TODO(), bson.M{"_id": objID, "userID": userID})
+	result, err := collection.DeleteOne(context.TODO(), bson.M{"_id": objID, "userID":objectID})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete key"})
 		return
